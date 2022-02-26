@@ -1,9 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-
-import 'device.dart';
-import 'room.dart';
-import 'events.dart';
+import 'package:florafi/florafi.dart';
 
 class FarmMessage {
   String topic;
@@ -23,6 +20,7 @@ class FarmMessage {
 class Farm {
   Map<String, Device> devices = {};
   Map<String, Room> rooms = {};
+  Map<String, Alert> alerts = {};
 
   // late Stream<FarmEvent> _events;
   late StreamController<FarmEvent> _events;
@@ -136,8 +134,74 @@ class Farm {
     device.isDeactivated = deactivated;
   }
 
-  void _processRoomMessage(FarmMessage message) {
-    throw UnimplementedError();
+  void _processRoomMessage(FarmMessage msg) {
+    // invalid: missing room id
+    if (msg.topicParts.isEmpty || msg.topicParts[0].isEmpty) {
+      return print(
+          "[!] Invalid room message: missing room id. (topic: ${msg.topic})");
+    }
+
+    final roomId = msg.shiftTopic();
+
+    // invalid: missing subtopic
+    if (msg.topicParts.isEmpty || msg.topicParts[0].isEmpty) {
+      return print(
+          "[!] Invalid room message: missing subtopic. (topic: ${msg.topic})");
+    }
+
+    final room = _discoverRoom(roomId);
+    final subtopic = msg.shiftTopic();
+
+    if (subtopic == "alert") {
+      _processRoomAlertMessage(room, msg);
+    }
+  }
+
+  void _processRoomAlertMessage(Room room, FarmMessage msg) {
+    // <alertType>/<alertId>
+    // invalid: missing type
+    if (msg.topicParts.isEmpty || msg.topicParts[0].isEmpty) {
+      return print(
+          "[!] Invalid alert message: missing type. (topic: ${msg.topic})");
+    }
+
+    late AlertType alertType;
+    switch (msg.shiftTopic()) {
+      case "info":
+        alertType = AlertType.info;
+        break;
+      case "warning":
+        alertType = AlertType.warning;
+        break;
+      case "error":
+        alertType = AlertType.error;
+        break;
+      default:
+        return print(
+            "[!] Invalid alert message: invalid type. (topic: ${msg.topic})");
+    }
+
+    // invalid: missing id
+    if (msg.topicParts.isEmpty || msg.topicParts[0].isEmpty) {
+      return print(
+          "[!] Invalid alert message: missing id. (topic: ${msg.topic})");
+    }
+
+    final alertId = msg.shiftTopic();
+    final timestamp = int.tryParse(msg.data) ?? 0;
+    final alert = Alert(
+        id: alertId, type: alertType, timestamp: timestamp, roomId: room.id);
+
+    // process alert
+    final alertKey = "${room.id}.${alert.id}";
+    if (alert.isActive) {
+      alerts[alertKey] = alert;
+    } else {
+      alerts.remove(alertKey);
+    }
+
+    // emit
+    _events.add(FarmEvent(FarmEventType.alert, room: room, alert: alert));
   }
 
   void _processHomieMessage(FarmMessage msg) {

@@ -1,5 +1,4 @@
-import 'device.dart';
-import 'room.dart';
+import 'package:florafi/florafi.dart';
 
 enum FarmEventType {
   deviceInstall,
@@ -25,9 +24,10 @@ enum FarmEventType {
 }
 
 class FarmEvent {
-  FarmEvent(this.type, {this.room, this.device});
+  FarmEvent(this.type, {this.room, this.device, this.alert});
 
   FarmEventType type;
   Room? room;
   Device? device;
+  Alert? alert;
 }
