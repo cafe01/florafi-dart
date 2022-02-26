@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:florafi/florafi.dart';
+import 'package:logging/logging.dart';
 
 class FarmMessage {
   String topic;
@@ -18,6 +19,8 @@ class FarmMessage {
 }
 
 class Farm {
+  final _log = Logger('Farm');
+
   Map<String, Device> devices = {};
   Map<String, Room> rooms = {};
   Map<String, Alert> alerts = {};
@@ -70,7 +73,7 @@ class Farm {
     } else if (messageType == "homie") {
       _processHomieMessage(message);
     } else {
-      print("Unknown message topic '$topic'");
+      _log.warning("Unknown message topic '$topic'");
     }
   }
 
@@ -82,13 +85,13 @@ class Farm {
     } else if (subtopic == "device") {
       _processDeviceDiscoveryMessage(message);
     } else {
-      print("[!] Unknown florafi message type '${message.topic}'");
+      _log.warning("Unknown florafi message type '${message.topic}'");
     }
   }
 
   void _processDeviceDiscoveryMessage(FarmMessage message) {
     if (message.topicParts.length != 1 || message.topicParts[0].isEmpty) {
-      print("[!] Malformed device discovery message: "
+      _log.warning("Malformed device discovery message: "
           "missing device id subtopic. (${message.topic}) (${message.topicParts.length})");
       return;
     }
@@ -102,7 +105,7 @@ class Farm {
         // TODO remove device from from room
         // emit event
       } else {
-        print("[!] Received 'forget device' message "
+        _log.warning("Received 'forget device' message "
             "for unknown device '$deviceId'");
       }
 
@@ -120,7 +123,7 @@ class Farm {
     if (!discoveryMsg.containsKey("room") ||
         !discoveryMsg.containsKey("deactivated") ||
         deactivated == null) {
-      return print("[!] Invalid device discovery message. "
+      return _log.warning("Invalid device discovery message. "
           "(${message.topic}: ${message.data})");
     }
 
@@ -137,16 +140,16 @@ class Farm {
   void _processRoomMessage(FarmMessage msg) {
     // invalid: missing room id
     if (msg.topicParts.isEmpty || msg.topicParts[0].isEmpty) {
-      return print(
-          "[!] Invalid room message: missing room id. (topic: ${msg.topic})");
+      return _log.warning(
+          "Invalid room message: missing room id. (topic: ${msg.topic})");
     }
 
     final roomId = msg.shiftTopic();
 
     // invalid: missing subtopic
     if (msg.topicParts.isEmpty || msg.topicParts[0].isEmpty) {
-      return print(
-          "[!] Invalid room message: missing subtopic. (topic: ${msg.topic})");
+      return _log.warning(
+          "Invalid room message: missing subtopic. (topic: ${msg.topic})");
     }
 
     final room = _discoverRoom(roomId);
@@ -161,8 +164,8 @@ class Farm {
     // <alertType>/<alertId>
     // invalid: missing type
     if (msg.topicParts.isEmpty || msg.topicParts[0].isEmpty) {
-      return print(
-          "[!] Invalid alert message: missing type. (topic: ${msg.topic})");
+      return _log.warning(
+          "Invalid alert message: missing type. (topic: ${msg.topic})");
     }
 
     late AlertType alertType;
@@ -177,14 +180,14 @@ class Farm {
         alertType = AlertType.error;
         break;
       default:
-        return print(
-            "[!] Invalid alert message: invalid type. (topic: ${msg.topic})");
+        return _log.warning(
+            "Invalid alert message: invalid type. (topic: ${msg.topic})");
     }
 
     // invalid: missing id
     if (msg.topicParts.isEmpty || msg.topicParts[0].isEmpty) {
-      return print(
-          "[!] Invalid alert message: missing id. (topic: ${msg.topic})");
+      return _log
+          .warning("Invalid alert message: missing id. (topic: ${msg.topic})");
     }
 
     final alertId = msg.shiftTopic();
@@ -209,13 +212,13 @@ class Farm {
 
     // invalid
     if (deviceId.isEmpty) {
-      return print(
-          "[!] Invalid homie message: missing device id. (${msg.topic})");
+      return _log
+          .warning("Invalid homie message: missing device id. (${msg.topic})");
     }
 
     // missing subtopic
     if (msg.topicParts.isEmpty || msg.topicParts[0].isEmpty) {
-      return print("[!] Invalid homie message: "
+      return _log.warning("Invalid homie message: "
           "missing subtopic(s). ${msg.topic}");
     }
 
@@ -285,7 +288,8 @@ class Farm {
         device.status = DeviceStatus.sleeping;
         break;
       default:
-        print("[!] Ignored invalid device '${device.id}' state: ${msg.data}");
+        _log.warning(
+            "Ignored invalid device '${device.id}' state: ${msg.data}");
     }
 
     _events.add(FarmEvent(FarmEventType.deviceStatus, device: device));
@@ -298,7 +302,7 @@ class Farm {
     try {
       config = jsonDecode(msg.data);
     } catch (e) {
-      print("[!] error decoding device config: $e");
+      _log.warning("error decoding device config: $e");
       return;
     }
 
