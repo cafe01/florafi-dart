@@ -25,12 +25,13 @@ class Farm {
   Map<String, Room> rooms = {};
   Map<String, Alert> alerts = {};
 
-  // late Stream<FarmEvent> _events;
   late StreamController<FarmEvent> _events;
-
   Stream<FarmEvent> get events {
     return _events.stream;
   }
+
+  int logListSize = 0;
+  final List<LogLine> logList = [];
 
   Farm() {
     // create events stream controller
@@ -155,9 +156,65 @@ class Farm {
     final room = _discoverRoom(roomId);
     final subtopic = msg.shiftTopic();
 
-    if (subtopic == "alert") {
-      _processRoomAlertMessage(room, msg);
+    switch (subtopic) {
+      case "log":
+        _processRoomLogMessage(room, msg);
+        break;
+      case "alert":
+        _processRoomAlertMessage(room, msg);
+        break;
+      default:
+        _log.fine("Unknown room message type: $subtopic");
     }
+  }
+
+  void _processRoomLogMessage(Room room, FarmMessage msg) {
+    if (msg.topicParts.isEmpty || msg.topicParts[0].isEmpty) {
+      _log.warning("Invalid log message: missing level. (topic: ${msg.topic})");
+      return;
+    }
+
+    late LogLevel logLevel;
+
+    switch (msg.shiftTopic()) {
+      case "debug":
+        logLevel = LogLevel.debug;
+        break;
+      case "info":
+        logLevel = LogLevel.info;
+        break;
+      case "warning":
+        logLevel = LogLevel.warning;
+        break;
+      case "error":
+        logLevel = LogLevel.error;
+        break;
+      default:
+        _log.warning(
+            "Invalid log message: unkown level. (topic: ${msg.topic})");
+        return;
+    }
+
+    // parse message
+    late LogLine logLine;
+    try {
+      logLine = LogLine.fromJson(room.id, logLevel, jsonDecode(msg.data));
+    } catch (e) {
+      _log.severe("Error parsing log message: $e");
+      return;
+    }
+
+    // store
+    if (logListSize > 0) {
+      if (logList.length + 1 > logListSize) {
+        final removeCount = logList.length + 1 - logListSize;
+        logList.removeRange(0, removeCount);
+      }
+      logList.add(logLine);
+    }
+
+    // emit
+    _events.add(FarmEvent(FarmEventType.log, room: room, log: logLine));
   }
 
   void _processRoomAlertMessage(Room room, FarmMessage msg) {

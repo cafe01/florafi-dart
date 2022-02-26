@@ -24,10 +24,11 @@ enum FarmEventType {
 }
 
 class FarmEvent {
-  FarmEvent(this.type, {this.room, this.device, this.alert});
+  FarmEvent(this.type, {this.room, this.device, this.alert, this.log});
 
   FarmEventType type;
   Room? room;
   Device? device;
   Alert? alert;
+  LogLine? log;
 }

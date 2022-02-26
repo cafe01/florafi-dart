@@ -1,8 +1,15 @@
 import 'package:async/async.dart';
+import 'package:logging/logging.dart';
 import 'package:test/test.dart';
 import 'package:florafi/florafi.dart';
 
 void main() {
+  Logger.root.level = Level.SEVERE;
+  Logger.root.onRecord.listen((record) {
+    print(
+        "${record.time} ${record.loggerName}.${record.level}: ${record.message}");
+  });
+
   group("Device discovery", () {
     late Farm farm;
     late StreamQueue<FarmEvent> events;
