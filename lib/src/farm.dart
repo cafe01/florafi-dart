@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:florafi/florafi.dart';
+import 'package:florafi/src/communicator.dart';
 import 'package:florafi/src/notification.dart';
 import 'package:logging/logging.dart';
 
@@ -34,13 +35,21 @@ class Farm {
   int logListSize = 0;
   final List<LogLine> logList = [];
 
+  Communicator? communicator;
+
   Farm() {
     // create events stream controller
     _events = StreamController<FarmEvent>.broadcast();
   }
 
-  void publish(String topic, String payload, [retain = false]) {
-    _log.info("publishing to $topic: $payload (retain = $retain)");
+  void publish(String topic, String message,
+      {retain = false, qos = CommunicatorQos.atLeastOnce}) {
+    if (communicator == null) {
+      throw Exception("Can't publish without a communicator.");
+    }
+
+    _log.fine("publishing to $topic: $message (retain: $retain, qos: $qos)");
+    communicator!.publish(topic, message);
   }
 
   Room _discoverRoom(String id) {
@@ -64,7 +73,6 @@ class Farm {
     // install
     final device = devices[id] = Device(id);
     _events.add(FarmEvent(FarmEventType.deviceInstall, device: device));
-    // TODO emit event
 
     return device;
   }
