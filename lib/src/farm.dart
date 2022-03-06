@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:florafi/florafi.dart';
+import 'package:florafi/src/notification.dart';
 import 'package:logging/logging.dart';
 
 class FarmMessage {
@@ -38,6 +39,10 @@ class Farm {
     _events = StreamController<FarmEvent>.broadcast();
   }
 
+  void publish(String topic, String payload, [retain = false]) {
+    _log.info("publishing to $topic: $payload (retain = $retain)");
+  }
+
   Room _discoverRoom(String id) {
     // return existing
     if (rooms.containsKey(id)) {
@@ -45,7 +50,7 @@ class Farm {
     }
 
     // install
-    final room = rooms[id] = Room(id);
+    final room = rooms[id] = Room(id, farm: this);
     _events.add(FarmEvent(FarmEventType.roomInstall, room: room));
     return room;
   }
@@ -157,15 +162,42 @@ class Farm {
     final subtopic = msg.shiftTopic();
 
     switch (subtopic) {
+      case "state":
+        _processRoomStateMessage(room, msg);
+        break;
       case "log":
         _processRoomLogMessage(room, msg);
         break;
       case "alert":
         _processRoomAlertMessage(room, msg);
         break;
+      case "notification":
+        _processRoomNotificationMessage(room, msg);
+        break;
       default:
         _log.fine("Unknown room message type: $subtopic");
     }
+  }
+
+  void _processRoomStateMessage(Room room, FarmMessage msg) {
+    // invalid topic
+    if (msg.topicParts.length != 2) {
+      _log.warning("Invalid state message. (topic: ${msg.topic}");
+      return;
+    }
+
+    // resolve component
+    final componentId = msg.shiftTopic();
+    final component = room.resolveComponent(componentId);
+
+    if (component == null) {
+      _log.warning('Invalid state message: '
+          'unknown component "$componentId" (topic: ${msg.topic})');
+      return;
+    }
+
+    // property
+    final propertyName = msg.shiftTopic();
   }
 
   void _processRoomLogMessage(Room room, FarmMessage msg) {
@@ -262,6 +294,13 @@ class Farm {
 
     // emit
     _events.add(FarmEvent(FarmEventType.alert, room: room, alert: alert));
+  }
+
+  void _processRoomNotificationMessage(Room room, FarmMessage msg) {
+    final notification = Notification(message: msg.data, roomId: room.id);
+
+    _events.add(FarmEvent(FarmEventType.notification,
+        room: room, notification: notification));
   }
 
   void _processHomieMessage(FarmMessage msg) {

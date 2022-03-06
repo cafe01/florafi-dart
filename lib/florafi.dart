@@ -9,6 +9,7 @@ export 'src/events.dart';
 export 'src/device.dart';
 export 'src/alert.dart';
 export 'src/log.dart';
+export 'src/component/components.dart';
 export 'src/florafi.dart';
 
 // TODO: Export any libraries intended for clients of this package.
