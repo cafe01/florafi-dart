@@ -149,3 +149,11 @@ components:
         
       - name: activation_threshold
         type: int
+  
+  ebbflow_flood:
+    import:
+      - component/relay.g.dart
+    extends: Relay
+    init_vars:
+      name: Ebbflow flood
+
