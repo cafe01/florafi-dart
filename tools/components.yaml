@@ -206,14 +206,14 @@ components:
       - name: high_temperature_disabled
         type: bool
 
-  humidifer:
+  humidifier:
     import:
       - component/threshold_relay.g.dart
     extends: ThresholdRelay
     init_vars:
       name: Umidificador
 
-  dehumidifer:
+  dehumidifier:
     import:
       - component/threshold_relay.g.dart
     extends: ThresholdRelay

@@ -10,5 +10,5 @@ export 'ebbflow_flood.g.dart';
 export 'ebbflow_drain.g.dart';
 export 'lighting.g.dart';
 export 'exaust.g.dart';
-export 'humidifer.g.dart';
-export 'dehumidifer.g.dart';
+export 'humidifier.g.dart';
+export 'dehumidifier.g.dart';

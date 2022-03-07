@@ -9,11 +9,43 @@ class Room {
   String id;
   Farm farm;
 
+  Daytime? daytime;
+  Dehumidifier? dehumidifier;
+  EbbflowFlood? ebbflowFlood;
+  EbbflowDrain? ebbflowDrain;
+  Ebbflow? ebbflow;
+  Exaust? exaust;
+  Humidifier? humidifier;
+  Hygrometer? hygrometer;
+  IntervalIrrigation? intervalIrrigation;
+  LightSensor? lightSensor;
+  Lighting? lighting;
   Thermometer? thermometer;
 
   Component? resolveComponent(String componentId) {
     switch (componentId) {
-      case "thermometer":
+      case "daytime":
+        return daytime ??= Daytime(room: this);
+      case "dehumidifier-relay":
+        return dehumidifier ??= Dehumidifier(room: this);
+      case "ebbflow-drain-relay":
+        return ebbflowDrain ??= EbbflowDrain(room: this);
+      case "ebbflow-flood-relay":
+        return ebbflowFlood ??= EbbflowFlood(room: this);
+      case "ebbflow":
+        return ebbflow ??= Ebbflow(room: this);
+      case "exaust-relay":
+        return exaust ??= Exaust(room: this);
+      case "humidifier-relay":
+        return humidifier ??= Humidifier(room: this);
+      case "humidity":
+        return hygrometer ??= Hygrometer(room: this);
+      case "interval-irrigation":
+        return intervalIrrigation ??= IntervalIrrigation(room: this);
+      case "light":
+        return lightSensor ??= LightSensor(room: this);
+      case "light-relay":
+        return lighting ??= Lighting(room: this);
       case "temperature":
         return thermometer ??= Thermometer(room: this);
       default:
