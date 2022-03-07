@@ -150,6 +150,25 @@ components:
       - name: activation_threshold
         type: int
   
+  interval_irrigation:
+    import:
+      - component/relay.g.dart
+    extends: Relay
+    init_vars:
+      name: Irrigação intermitente
+    rw:
+      - name: day_interval
+        type: int
+        
+      - name: night_interval
+        type: int
+
+      - name: duration
+        type: int
+
+      - name: duration_unit
+        type: String
+
   ebbflow_flood:
     import:
       - component/relay.g.dart
