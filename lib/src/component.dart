@@ -1,7 +1,7 @@
 import 'package:logging/logging.dart';
 
-import '../device.dart';
-import '../room.dart';
+import 'device.dart';
+import 'room.dart';
 
 final _log = Logger("Component");
 
@@ -68,7 +68,17 @@ abstract class Component {
   }
 }
 
-mixin Sensor {
+class Sensor extends Component {
+  Sensor({required Room room}) : super(room: room);
   final isSensor = true;
   late final String measurementName;
+}
+
+class Relay extends Component {
+  Relay({required Room room}) : super(room: room);
+  final isRelay = true;
+}
+
+class ThresholdRelay extends Relay {
+  ThresholdRelay({required Room room}) : super(room: room);
 }

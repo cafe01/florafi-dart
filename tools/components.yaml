@@ -1,0 +1,21 @@
+
+defaults:
+  extends: Component
+  import:
+    - component.dart
+    - room.dart
+components:
+  thermometer:
+    extends: Sensor
+    init_vars:
+      name: Termômetro
+      measurementName: Temperatura    
+    ro:
+      - name: last_value
+        type: int
+    rw:
+      - name: low_temperature_limit
+        type: int
+
+      - name: high_temperature_limit
+        type: int

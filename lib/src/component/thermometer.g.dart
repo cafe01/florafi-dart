@@ -1,7 +1,10 @@
-import '../room.dart';
-import 'component.dart';
+// This file was auto-generated
+// Do NOT EDIT by hand
 
-class Thermometer extends Component with Sensor {
+import '../component.dart';
+import '../room.dart';
+
+class Thermometer extends Sensor {
   Thermometer(Room room) : super(room: room) {
     name = "Termômetro";
     measurementName = "Temperatura";
@@ -10,7 +13,6 @@ class Thermometer extends Component with Sensor {
   int? get lastValue => getInt("last_value");
   int? get lowTemperatureLimit => getInt("low_temperature_limit");
   int? get highTemperatureLimit => getInt("high_temperature_limit");
-
   set lowTemperatureLimit(int? value) =>
       setControl("low_temperature_limit", value);
   set highTemperatureLimit(int? value) =>
