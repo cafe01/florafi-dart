@@ -50,6 +50,22 @@ components:
       - name: max_intensity_night_alert
         type: int
 
+  daytime:
+    init_vars:
+      name: Fotoperíodo
+    ro:
+      - name: is_daytime
+        type: bool
+    rw:
+      - name: start_hour
+        type: int
+
+      - name: duration
+        type: int
+
+      - name: start_delay
+        type: int
+
   ebbflow:
     init_vars:
       name: Irrigação ebbflow
