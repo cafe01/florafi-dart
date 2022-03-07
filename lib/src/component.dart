@@ -35,6 +35,10 @@ abstract class Component {
     return int.tryParse(_state[prop] ?? "");
   }
 
+  double? getDouble(String prop) {
+    return double.tryParse(_state[prop] ?? "");
+  }
+
   bool? getBool(String prop) {
     final value = _state[prop];
     if (value == null) {

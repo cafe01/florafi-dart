@@ -5,7 +5,7 @@ import 'package:yaml/yaml.dart';
 
 extension StringCasingExtension on String {
   String ucFirst() =>
-      length > 0 ? '${this[0].toUpperCase()}${substring(1).toLowerCase()}' : '';
+      length > 0 ? '${this[0].toUpperCase()}${substring(1)}' : '';
   String lcFirst() =>
       length > 0 ? '${this[0].toLowerCase()}${substring(1)}' : '';
   String toCamelCase() =>
@@ -61,7 +61,7 @@ void buildComponent(String componentId,
   }
 
   // class
-  final className = componentId.ucFirst();
+  final className = componentId.toCamelCase().ucFirst();
   final baseClass =
       (schema["extends"] as String?) ?? (defaults["extends"] as String?) ?? "";
 
@@ -97,10 +97,11 @@ void buildComponent(String componentId,
 
   // save
   final outputFile = File(path.join(outputDir.path, "$componentId.g.dart"));
-  print(" - saving to '${path.relative(outputFile.path)}'");
   outputFile.writeAsStringSync(sourceCode);
+  print(" - saved to '${path.relative(outputFile.path)}'");
 
   // format
+  print(" - formatting...");
   Process.runSync("dart", ["format", outputFile.path]);
 }
 
@@ -145,11 +146,11 @@ String buildGetter(YamlMap prop) {
   late final String getter;
 
   switch (type) {
-    case "num":
-      getter = "getNum";
-      break;
     case "int":
       getter = "getInt";
+      break;
+    case "double":
+      getter = "getDouble";
       break;
     case "bool":
       getter = "getBool";
