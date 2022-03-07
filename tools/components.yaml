@@ -163,3 +163,10 @@ components:
     extends: Relay
     init_vars:
       name: Ebbflow drain
+
+  lighting:
+    import:
+      - component/relay.g.dart
+    extends: Relay
+    init_vars:
+      name: Iluminação
