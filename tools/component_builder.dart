@@ -121,7 +121,7 @@ String buildImport(String pkg, String srcPath, String outputPath) {
 }
 
 String buildConstructor(String className, YamlMap? initVars) {
-  String output = "$className(Room room) : super(room: room)";
+  String output = "$className({required Room room}) : super(room: room)";
   if (initVars == null || initVars.isEmpty) {
     return "$output;";
   }

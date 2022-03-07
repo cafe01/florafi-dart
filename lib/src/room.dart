@@ -15,7 +15,7 @@ class Room {
     switch (componentId) {
       case "thermometer":
       case "temperature":
-        return thermometer ??= Thermometer(this);
+        return thermometer ??= Thermometer(room: this);
       default:
         return null;
     }

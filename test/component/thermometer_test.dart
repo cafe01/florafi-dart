@@ -16,7 +16,7 @@ void main() {
       communicator = TestCommunicator();
       farm.communicator = communicator;
       room = Room('r1', farm: farm);
-      component = Thermometer(room);
+      component = Thermometer(room: room);
     });
 
     test('has informational properties.', () {
