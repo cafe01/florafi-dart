@@ -12,7 +12,7 @@ components:
       measurementName: Temperatura    
     ro:
       - name: last_value
-        type: int
+        type: double
     rw:
       - name: low_temperature_limit
         type: int

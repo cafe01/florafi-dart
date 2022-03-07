@@ -10,7 +10,7 @@ class Thermometer extends Sensor {
     measurementName = "Temperatura";
   }
 
-  int? get lastValue => getInt("last_value");
+  double? get lastValue => getDouble("last_value");
   int? get lowTemperatureLimit => getInt("low_temperature_limit");
   int? get highTemperatureLimit => getInt("high_temperature_limit");
   set lowTemperatureLimit(int? value) =>
