@@ -121,3 +121,31 @@ components:
 
       - name: night_interval
         type: int
+
+  relay:
+    ro:
+      - name: last_on
+        type: int
+
+      - name: last_off
+        type: int
+    rw:
+      - name: power
+        type: bool
+
+      - name: automation
+        type: bool
+        
+      - name: cooldown_duration
+        type: int
+
+  threshold_relay:
+    import:
+      - component/relay.g.dart
+    extends: Relay
+    rw:
+      - name: deactivation_threshold
+        type: int
+        
+      - name: activation_threshold
+        type: int

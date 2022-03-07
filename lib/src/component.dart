@@ -77,12 +77,3 @@ class Sensor extends Component {
   final isSensor = true;
   late final String measurementName;
 }
-
-class Relay extends Component {
-  Relay({required Room room}) : super(room: room);
-  final isRelay = true;
-}
-
-class ThresholdRelay extends Relay {
-  ThresholdRelay({required Room room}) : super(room: room);
-}
