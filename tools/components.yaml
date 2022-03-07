@@ -170,3 +170,10 @@ components:
     extends: Relay
     init_vars:
       name: Iluminação
+
+  humidifer:
+    import:
+      - component/threshold_relay.g.dart
+    extends: ThresholdRelay
+    init_vars:
+      name: Humidificador
