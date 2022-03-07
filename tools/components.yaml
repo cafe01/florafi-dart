@@ -35,3 +35,17 @@ components:
       - name: high_humidity_limit
         type: int
 
+  light_sensor:
+    extends: Sensor
+    init_vars:
+      name: Sensor de luminosidade
+      measurementName: Iluminação
+    ro:
+      - name: intensity
+        type: int
+    rw:
+      - name: min_intensity_day_alert
+        type: int
+        
+      - name: max_intensity_night_alert
+        type: int
