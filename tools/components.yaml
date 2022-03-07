@@ -46,6 +46,62 @@ components:
     rw:
       - name: min_intensity_day_alert
         type: int
-        
+
       - name: max_intensity_night_alert
+        type: int
+
+  ebbflow:
+    init_vars:
+      name: Irrigação ebbflow
+    ro:
+      - name: is_empty
+        type: bool
+
+      - name: is_full
+        type: bool
+
+      - name: last_empty
+        type: int
+        
+      - name: last_drain
+        type: int
+
+      - name: last_flood
+        type: int
+
+      - name: last_full
+        type: int
+
+    rw:
+      - name: phase
+        type: int
+        
+      - name: flood_automation
+        type: bool
+
+      - name: min_empty_seconds
+        type: int
+
+      - name: min_drain_seconds
+        type: int
+
+      - name: max_drain_minutes
+        type: int
+
+      - name: max_flood_minutes
+        type: int
+
+      - name: min_full_seconds
+        type: int
+
+      - name: max_full_seconds
+        type: int
+
+      - name: max_unfull_minutes
+        type: int
+
+      - name: day_interval
+        type: int
+
+      - name: night_interval
         type: int
