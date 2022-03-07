@@ -17,3 +17,4 @@ dev_dependencies:
   yaml: ^3.1.0
   args: ^2.3.0
   path: ^1.8.1
+  dart_style: ^2.2.2

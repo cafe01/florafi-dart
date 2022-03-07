@@ -1,2 +1,2 @@
 export '../component.dart';
-export 'thermometer.g.dart';
+export 'components.g.dart';

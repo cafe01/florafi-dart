@@ -206,7 +206,6 @@ components:
       - name: high_temperature_disabled
         type: bool
 
-
   humidifer:
     import:
       - component/threshold_relay.g.dart

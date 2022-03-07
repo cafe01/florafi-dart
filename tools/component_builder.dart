@@ -2,6 +2,9 @@ import 'package:args/args.dart';
 import "package:path/path.dart" as path;
 import 'dart:io';
 import 'package:yaml/yaml.dart';
+import 'package:dart_style/dart_style.dart';
+
+final dartFormatter = DartFormatter();
 
 extension StringCasingExtension on String {
   String ucFirst() =>
@@ -35,15 +38,22 @@ void main(List<String> arguments) {
   final outputDir = Directory(args["to"]);
   outputDir.createSync(recursive: true);
 
+  final List<File> generatedFiles = [];
+
   for (final componentId in components.keys) {
-    buildComponent(componentId,
+    final file = buildComponent(componentId,
         defaults: defaults,
         schema: components[componentId],
         outputDir: outputDir);
+
+    generatedFiles.add(file);
   }
+
+  // generate components file
+  buildComponentsFile(generatedFiles, outputDir.path);
 }
 
-void buildComponent(String componentId,
+File buildComponent(String componentId,
     {required YamlMap defaults,
     required YamlMap schema,
     required Directory outputDir}) {
@@ -95,14 +105,16 @@ void buildComponent(String componentId,
       "\n${rwProps.join('\n')}\n"
       "\n}";
 
+  // format
+  print(" - formatting...");
+  sourceCode = dartFormatter.format(sourceCode);
+
   // save
   final outputFile = File(path.join(outputDir.path, "$componentId.g.dart"));
   outputFile.writeAsStringSync(sourceCode);
   print(" - saved to '${path.relative(outputFile.path)}'");
 
-  // format
-  print(" - formatting...");
-  Process.runSync("dart", ["format", outputFile.path]);
+  return outputFile;
 }
 
 String buildImport(String pkg, String srcPath, String outputPath) {
@@ -172,4 +184,16 @@ String buildSetter(YamlMap prop) {
   String name = prop["name"];
   String accessor = name.toCamelCase();
   return 'set $accessor($type? value) => setControl("$name", value);';
+}
+
+void buildComponentsFile(List<File> generatedFiles, String outputPath) {
+  String output = "";
+  for (final file in generatedFiles) {
+    final importPath = path.relative(file.path, from: outputPath);
+    output += "export '$importPath';\n";
+  }
+
+  final componentsFile = File(path.join(outputPath, "components.g.dart"));
+  componentsFile.writeAsStringSync(output);
+  print("Saved export file '${path.relative(componentsFile.path)}'");
 }
