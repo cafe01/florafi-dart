@@ -176,4 +176,11 @@ components:
       - component/threshold_relay.g.dart
     extends: ThresholdRelay
     init_vars:
-      name: Humidificador
+      name: Umidificador
+
+  dehumidifer:
+    import:
+      - component/threshold_relay.g.dart
+    extends: ThresholdRelay
+    init_vars:
+      name: Desumidificador
