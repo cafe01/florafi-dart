@@ -159,7 +159,7 @@ components:
     rw:
       - name: day_interval
         type: int
-        
+
       - name: night_interval
         type: int
 
@@ -189,6 +189,23 @@ components:
     extends: Relay
     init_vars:
       name: Iluminação
+
+  exaust:
+    import:
+      - component/relay.g.dart
+    extends: Relay
+    init_vars:
+      name: Exaustor
+    rw:
+      - name: daytime_enabled
+        type: bool
+
+      - name: nighttime_enabled
+        type: bool
+
+      - name: high_temperature_disabled
+        type: bool
+
 
   humidifer:
     import:
