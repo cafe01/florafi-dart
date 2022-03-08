@@ -11,3 +11,4 @@ build/
 # https://dart.dev/guides/libraries/private-files#pubspeclock.
 pubspec.lock
 tools/build_components
+test/cloud_test.dart
