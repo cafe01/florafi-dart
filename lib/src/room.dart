@@ -52,4 +52,62 @@ class Room {
         return null;
     }
   }
+
+  bool? removeComponent(String componentId) {
+    late final Component? component;
+    switch (componentId) {
+      case "daytime":
+        component = daytime;
+        daytime = null;
+        break;
+      case "dehumidifier-relay":
+        component = dehumidifier;
+        dehumidifier = null;
+        break;
+      case "ebbflow-drain-relay":
+        component = ebbflowDrain;
+        ebbflowDrain = null;
+        break;
+      case "ebbflow-flood-relay":
+        component = ebbflowFlood;
+        ebbflowFlood = null;
+        break;
+      case "ebbflow":
+        component = ebbflow;
+        ebbflow = null;
+        break;
+      case "exaust-relay":
+        component = exaust;
+        exaust = null;
+        break;
+      case "humidifier-relay":
+        component = humidifier;
+        humidifier = null;
+        break;
+      case "humidity":
+        component = hygrometer;
+        hygrometer = null;
+        break;
+      case "interval-irrigation":
+        component = intervalIrrigation;
+        intervalIrrigation = null;
+        break;
+      case "light":
+        component = lightSensor;
+        lightSensor = null;
+        break;
+      case "light-relay":
+        component = lighting;
+        lighting = null;
+        break;
+      case "temperature":
+        component = thermometer;
+        thermometer = null;
+        break;
+      default:
+        return null;
+    }
+
+    return component != null;
+  }
 }

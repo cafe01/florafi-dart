@@ -111,4 +111,28 @@ void main() {
       expect(room.thermometer, same(room.resolveComponent('temperature')));
     });
   });
+
+  group("Room.removeComponent()", () {
+    late Farm farm;
+    late Room room;
+
+    setUp(() {
+      farm = Farm();
+      room = Room('r1', farm: farm);
+    });
+
+    test('returns null for unkown component.', () {
+      expect(room.removeComponent('unkownComponent'), null);
+    });
+
+    test('returns true when component existed.', () {
+      room.resolveComponent("daytime");
+      expect(room.removeComponent('daytime'), true);
+      expect(room.daytime, null);
+    });
+
+    test("returns false when component did't exist.", () {
+      expect(room.removeComponent('daytime'), false);
+    });
+  });
 }
