@@ -9,7 +9,7 @@ void main() {
         "${record.time} ${record.loggerName}.${record.level}: ${record.message}");
   });
 
-  group("Room.resolveComponent()", () {
+  group("Room.getComponent()", () {
     late Farm farm;
     late Room room;
 
@@ -19,97 +19,94 @@ void main() {
     });
 
     test('throws expection for unkown component.', () {
-      mustThrow() => room.resolveComponent('unkownComponent');
+      mustThrow() => room.getComponent('unkownComponent');
       expect(mustThrow, throwsA(isA<UnknownComponentError>()));
     });
 
     test('handles Daytime.', () {
       expect(room.daytime, null);
-      expect(room.resolveComponent('daytime'), isA<Daytime>());
+      expect(room.getComponent('daytime'), isA<Daytime>());
       expect(room.daytime, isA<Daytime>());
-      expect(room.daytime, same(room.resolveComponent('daytime')));
+      expect(room.daytime, same(room.getComponent('daytime')));
     });
 
     test('handles Dehumidifier.', () {
       expect(room.dehumidifier, null);
-      expect(room.resolveComponent('dehumidifier-relay'), isA<Dehumidifier>());
+      expect(room.getComponent('dehumidifier-relay'), isA<Dehumidifier>());
       expect(room.dehumidifier, isA<Dehumidifier>());
-      expect(
-          room.dehumidifier, same(room.resolveComponent('dehumidifier-relay')));
+      expect(room.dehumidifier, same(room.getComponent('dehumidifier-relay')));
     });
 
     test('handles EbbflowDrain.', () {
       expect(room.ebbflowDrain, null);
-      expect(room.resolveComponent('ebbflow-drain-relay'), isA<EbbflowDrain>());
+      expect(room.getComponent('ebbflow-drain-relay'), isA<EbbflowDrain>());
       expect(room.ebbflowDrain, isA<EbbflowDrain>());
-      expect(room.ebbflowDrain,
-          same(room.resolveComponent('ebbflow-drain-relay')));
+      expect(room.ebbflowDrain, same(room.getComponent('ebbflow-drain-relay')));
     });
 
     test('handles EbbflowFlood.', () {
       expect(room.ebbflowFlood, null);
-      expect(room.resolveComponent('ebbflow-flood-relay'), isA<EbbflowFlood>());
+      expect(room.getComponent('ebbflow-flood-relay'), isA<EbbflowFlood>());
       expect(room.ebbflowFlood, isA<EbbflowFlood>());
-      expect(room.ebbflowFlood,
-          same(room.resolveComponent('ebbflow-flood-relay')));
+      expect(room.ebbflowFlood, same(room.getComponent('ebbflow-flood-relay')));
     });
 
     test('handles Ebbflow.', () {
       expect(room.ebbflow, null);
-      expect(room.resolveComponent('ebbflow'), isA<Ebbflow>());
+      expect(room.getComponent('ebbflow'), isA<Ebbflow>());
       expect(room.ebbflow, isA<Ebbflow>());
-      expect(room.ebbflow, same(room.resolveComponent('ebbflow')));
+      expect(room.ebbflow, same(room.getComponent('ebbflow')));
     });
 
     test('handles Exaust.', () {
       expect(room.exaust, null);
-      expect(room.resolveComponent('exaust-relay'), isA<Exaust>());
+      expect(room.getComponent('exaust-relay'), isA<Exaust>());
       expect(room.exaust, isA<Exaust>());
-      expect(room.exaust, same(room.resolveComponent('exaust-relay')));
+      expect(room.exaust, same(room.getComponent('exaust-relay')));
     });
 
     test('handles Humidifier.', () {
       expect(room.humidifier, null);
-      expect(room.resolveComponent('humidifier-relay'), isA<Humidifier>());
+      expect(room.getComponent('humidifier-relay'), isA<Humidifier>());
       expect(room.humidifier, isA<Humidifier>());
-      expect(room.humidifier, same(room.resolveComponent('humidifier-relay')));
+      expect(room.humidifier, same(room.getComponent('humidifier-relay')));
     });
 
     test('handles Hygrometer.', () {
       expect(room.hygrometer, null);
-      expect(room.resolveComponent('humidity'), isA<Hygrometer>());
+      expect(room.getComponent('humidity'), isA<Hygrometer>());
       expect(room.hygrometer, isA<Hygrometer>());
-      expect(room.hygrometer, same(room.resolveComponent('humidity')));
+      expect(room.hygrometer, same(room.getComponent('humidity')));
     });
 
     test('handles IntervalIrrigation.', () {
       expect(room.intervalIrrigation, null);
-      expect(room.resolveComponent('interval-irrigation'),
-          isA<IntervalIrrigation>());
+      expect(
+          room.getComponent('interval-irrigation'), isA<IntervalIrrigation>());
       expect(room.intervalIrrigation, isA<IntervalIrrigation>());
       expect(room.intervalIrrigation,
-          same(room.resolveComponent('interval-irrigation')));
+          same(room.getComponent('interval-irrigation')));
     });
 
     test('handles LightSensor.', () {
       expect(room.lightSensor, null);
-      expect(room.resolveComponent('light'), isA<LightSensor>());
+      expect(room.getComponent('light'), isA<LightSensor>());
       expect(room.lightSensor, isA<LightSensor>());
-      expect(room.lightSensor, same(room.resolveComponent('light')));
+      expect(room.lightSensor, same(room.getComponent('light')));
     });
 
     test('handles Lighting.', () {
       expect(room.lighting, null);
-      expect(room.resolveComponent('light-relay'), isA<Lighting>());
+      expect(room.getComponent('light-relay'), isA<Lighting>());
       expect(room.lighting, isA<Lighting>());
-      expect(room.lighting, same(room.resolveComponent('light-relay')));
+      expect(room.lighting, same(room.getComponent('light-relay')));
     });
 
     test('handles Thermometer.', () {
       expect(room.thermometer, null);
-      expect(room.resolveComponent('temperature'), isA<Thermometer>());
+      expect(room.getComponent('temperature'), isA<Thermometer>());
       expect(room.thermometer, isA<Thermometer>());
-      expect(room.thermometer, same(room.resolveComponent('temperature')));
+      expect(room.thermometer, same(room.getComponent('temperature')));
     });
   });
 
@@ -128,7 +125,7 @@ void main() {
     });
 
     test('returns true when component existed.', () {
-      room.resolveComponent("daytime");
+      room.getComponent("daytime");
       expect(room.removeComponent('daytime'), true);
       expect(room.daytime, null);
     });
@@ -152,7 +149,7 @@ void main() {
     });
 
     test('returns true when component exists.', () {
-      room.resolveComponent("daytime");
+      room.getComponent("daytime");
       expect(room.hasComponent('daytime'), true);
     });
 

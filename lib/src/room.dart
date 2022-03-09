@@ -57,7 +57,7 @@ class Room {
     }
   }
 
-  Component resolveComponent(String componentId) {
+  Component getComponent(String componentId) {
     switch (componentId) {
       case "daytime":
         return daytime ??= Daytime(room: this);
