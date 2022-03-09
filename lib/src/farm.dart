@@ -189,23 +189,30 @@ class Farm {
 
   void _processRoomStateMessage(Room room, FarmMessage msg) {
     // invalid topic
-    if (msg.topicParts.length != 2) {
+    if (msg.topicParts.length != 2 || msg.topicParts[1].isEmpty) {
       _log.warning("Invalid state message. (topic: ${msg.topic}");
       return;
     }
 
     // resolve component
     final componentId = msg.shiftTopic();
-    final component = room.resolveComponent(componentId);
 
-    if (component == null) {
+    if (room.hasComponent(componentId) == null) {
       _log.warning('Invalid state message: '
           'unknown component "$componentId" (topic: ${msg.topic})');
       return;
     }
 
-    // property
-    final propertyName = msg.shiftTopic();
+    final component = room.getComponent(componentId);
+
+    // consume
+    final propertyId = msg.shiftTopic();
+    component.consumeState(propertyId, msg.data);
+
+    //  emit event
+    final event = FarmEvent(FarmEventType.roomState, room: room);
+    _events.add(event);
+  }
   }
 
   void _processRoomLogMessage(Room room, FarmMessage msg) {

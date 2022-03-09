@@ -129,6 +129,40 @@ void main() {
     });
   });
 
+  group("_processRoomStateMessage()", () {
+    late Farm farm;
+    late StreamQueue<FarmEvent> events;
+
+    setUp(() {
+      farm = Farm();
+      farm.logListSize = 3;
+      events = StreamQueue<FarmEvent>(farm.events);
+    });
+
+    test('ignores invalid topic.', () {
+      farm.processMessage('florafi/room/r1/state', "foo");
+      farm.processMessage('florafi/room/r1/state/', "foo");
+      farm.processMessage('florafi/room/r1/state/unknown-component', "foo");
+      farm.processMessage('florafi/room/r1/state/unknown-component/', "foo");
+      farm.processMessage('florafi/room/r1/state/daytime/', "foo");
+      farm.processMessage('florafi/room/r1/state/daytime/foo/bar', "foo");
+      expect(farm.rooms["r1"]!.daytime, null);
+    });
+
+    test('consume component state.', () {
+      farm.processMessage('florafi/room/r1/state/daytime/duration', "18");
+      expect(farm.rooms["r1"]!.daytime!.duration, 18);
+    });
+
+    test('emits event.', () async {
+      farm.processMessage('florafi/room/r1/state/daytime/duration', "18");
+      events.skip(1); // skip roomInstall
+      final event = await events.next;
+      expect(event.type, FarmEventType.roomState);
+      expect(event.room, farm.rooms["r1"]);
+    });
+  });
+
   group("_processRoomLogMessage()", () {
     late Farm farm;
     late StreamQueue<FarmEvent> events;
