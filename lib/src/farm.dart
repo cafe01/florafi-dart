@@ -378,7 +378,7 @@ class Farm {
   void _processRoomNotificationMessage(Room room, FarmMessage msg) {
     final notification = Notification(message: msg.data, roomId: room.id);
 
-    _events.add(FarmEvent(FarmEventType.notification,
+    _events.add(FarmEvent(FarmEventType.roomNotification,
         room: room, notification: notification));
   }
 
