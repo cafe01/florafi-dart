@@ -2,6 +2,10 @@ import 'component/components.dart';
 import 'farm.dart';
 
 // final _log = Logger('Room');
+class UnknownComponentError implements Exception {
+  final String componentId;
+  UnknownComponentError(this.componentId);
+}
 
 class Room {
   Room(this.id, {required this.farm});
@@ -53,7 +57,7 @@ class Room {
     }
   }
 
-  Component? resolveComponent(String componentId) {
+  Component resolveComponent(String componentId) {
     switch (componentId) {
       case "daytime":
         return daytime ??= Daytime(room: this);
@@ -80,11 +84,11 @@ class Room {
       case "temperature":
         return thermometer ??= Thermometer(room: this);
       default:
-        return null;
+        throw UnknownComponentError(componentId);
     }
   }
 
-  bool? removeComponent(String componentId) {
+  bool removeComponent(String componentId) {
     late final Component? component;
     switch (componentId) {
       case "daytime":
@@ -136,7 +140,7 @@ class Room {
         thermometer = null;
         break;
       default:
-        return null;
+        throw UnknownComponentError(componentId);
     }
 
     return component != null;

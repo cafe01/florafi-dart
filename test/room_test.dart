@@ -18,8 +18,9 @@ void main() {
       room = Room('r1', farm: farm);
     });
 
-    test('returns null for unkown component.', () {
-      expect(room.resolveComponent('unkownComponent'), null);
+    test('throws expection for unkown component.', () {
+      mustThrow() => room.resolveComponent('unkownComponent');
+      expect(mustThrow, throwsA(isA<UnknownComponentError>()));
     });
 
     test('handles Daytime.', () {
@@ -121,8 +122,9 @@ void main() {
       room = Room('r1', farm: farm);
     });
 
-    test('returns null for unkown component.', () {
-      expect(room.removeComponent('unkownComponent'), null);
+    test('throws expection for unkown component.', () {
+      mustThrow() => room.removeComponent('unkownComponent');
+      expect(mustThrow, throwsA(isA<UnknownComponentError>()));
     });
 
     test('returns true when component existed.', () {
