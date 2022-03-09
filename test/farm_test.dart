@@ -5,6 +5,27 @@ import 'package:florafi/florafi.dart';
 import 'test_communicator.dart';
 
 void main() {
+  group("Farm.publish", () {
+    late Farm farm;
+    late TestCommunicator communicator;
+    // late StreamQueue<FarmEvent> events;
+
+    setUp(() {
+      farm = Farm();
+      communicator = TestCommunicator();
+      farm.communicator = communicator;
+      // events = StreamQueue<FarmEvent>(farm.events);
+      // events.skip(1); // roomInstall
+    });
+
+    test('handles publish()', () {
+      farm.publish("t1", "m1");
+      var msg = communicator.sentMessages.removeAt(0);
+      expect(msg.topic, "t1");
+      expect(msg.message, "m1");
+    });
+  });
+
   group("_processFlorafiDeviceMessage", () {
     late Farm farm;
     late StreamQueue<FarmEvent> events;
@@ -135,7 +156,6 @@ void main() {
 
     setUp(() {
       farm = Farm();
-      farm.logListSize = 3;
       events = StreamQueue<FarmEvent>(farm.events);
     });
 
@@ -149,7 +169,7 @@ void main() {
       expect(farm.rooms["r1"]!.daytime, null);
     });
 
-    test('consume component state.', () {
+    test('consumes component state.', () {
       farm.processMessage('florafi/room/r1/state/daytime/duration', "18");
       expect(farm.rooms["r1"]!.daytime!.duration, 18);
     });
@@ -160,6 +180,36 @@ void main() {
       final event = await events.next;
       expect(event.type, FarmEventType.roomState);
       expect(event.room, farm.rooms["r1"]);
+    });
+  });
+
+  group("_processRoomControlMessage()", () {
+    late Farm farm;
+    late TestCommunicator communicator;
+    // late StreamQueue<FarmEvent> events;
+
+    setUp(() {
+      farm = Farm();
+      farm.communicator = communicator = TestCommunicator();
+      // events = StreamQueue<FarmEvent>(farm.events);
+    });
+
+    test('ignores invalid topic.', () {
+      farm.processMessage('florafi/room/r1/control', "foo");
+      farm.processMessage('florafi/room/r1/control/', "foo");
+      farm.processMessage('florafi/room/r1/control/unknown-component', "foo");
+      farm.processMessage('florafi/room/r1/control/unknown-component/', "foo");
+      farm.processMessage('florafi/room/r1/control/daytime/', "foo");
+      farm.processMessage('florafi/room/r1/control/daytime/foo/bar', "foo");
+      expect(farm.rooms["r1"]!.daytime, null);
+    });
+
+    test('consumes component control.', () {
+      farm.processMessage('florafi/room/r1/control/daytime/duration', "foobar");
+      farm.rooms["r1"]!.daytime!.duration = 6;
+      var msg = communicator.sentMessages.removeAt(0);
+      expect(msg.topic, "foobar");
+      expect(msg.message, "6");
     });
   });
 
@@ -506,27 +556,6 @@ void main() {
           .map((e) => e.type)
           .skipWhile((e) => e != FarmEventType.deviceLoaded);
       expect(eventStream, emits(FarmEventType.deviceLoaded));
-    });
-  });
-
-  group("Farm.communicator", () {
-    late Farm farm;
-    late TestCommunicator communicator;
-    // late StreamQueue<FarmEvent> events;
-
-    setUp(() {
-      farm = Farm();
-      communicator = TestCommunicator();
-      farm.communicator = communicator;
-      // events = StreamQueue<FarmEvent>(farm.events);
-      // events.skip(1); // roomInstall
-    });
-
-    test('handles publish()', () {
-      farm.publish("t1", "m1");
-      var msg = communicator.sentMessages.removeAt(0);
-      expect(msg.topic, "t1");
-      expect(msg.message, "m1");
     });
   });
 }

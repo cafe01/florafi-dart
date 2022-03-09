@@ -176,6 +176,9 @@ class Farm {
       case "log":
         _processRoomLogMessage(room, msg);
         break;
+      case "control":
+        _processRoomControlMessage(room, msg);
+        break;
       case "alert":
         _processRoomAlertMessage(room, msg);
         break;
@@ -212,6 +215,29 @@ class Farm {
     //  emit event
     final event = FarmEvent(FarmEventType.roomState, room: room);
     _events.add(event);
+  }
+
+  void _processRoomControlMessage(Room room, FarmMessage msg) {
+    // invalid topic
+    if (msg.topicParts.length != 2 || msg.topicParts[1].isEmpty) {
+      _log.warning("Invalid control message. (topic: ${msg.topic}");
+      return;
+    }
+
+    // resolve component
+    final componentId = msg.shiftTopic();
+
+    if (room.hasComponent(componentId) == null) {
+      _log.warning('Invalid control message: '
+          'unknown component "$componentId" (topic: ${msg.topic})');
+      return;
+    }
+
+    final component = room.getComponent(componentId);
+
+    // consume
+    final propertyId = msg.shiftTopic();
+    component.consumeControl(propertyId, msg.data);
   }
   }
 
