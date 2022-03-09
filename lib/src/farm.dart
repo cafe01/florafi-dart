@@ -97,13 +97,13 @@ class Farm {
     if (subtopic == "room") {
       _processRoomMessage(message);
     } else if (subtopic == "device") {
-      _processDeviceDiscoveryMessage(message);
+      _processFlorafiDeviceMessage(message);
     } else {
       _log.warning("Unknown florafi message type '${message.topic}'");
     }
   }
 
-  void _processDeviceDiscoveryMessage(FarmMessage message) {
+  void _processFlorafiDeviceMessage(FarmMessage message) {
     if (message.topicParts.length != 1 || message.topicParts[0].isEmpty) {
       _log.warning("Malformed device discovery message: "
           "missing device id subtopic. (${message.topic}) (${message.topicParts.length})");
