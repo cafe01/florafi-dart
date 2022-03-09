@@ -3,15 +3,18 @@ import 'package:florafi/src/notification.dart';
 
 enum FarmEventType {
   deviceInstall,
-  deviceUninstall,
   deviceState,
   deviceStatus,
   deviceLoaded,
+  deviceUninstall,
 
   roomInstall,
+  roomState,
+  roomUpdate,
   roomUninstall,
 
-  roomState,
+  // componentInstall,
+  // componentUninstall,
 
   alert,
   notification,
