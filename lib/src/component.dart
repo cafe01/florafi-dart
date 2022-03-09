@@ -14,6 +14,9 @@ abstract class Component {
   final Map<String, String> _control = {};
 
   bool get hasDevice => device != null;
+  bool get isOnline => device?.isOnline ?? false;
+
+  // static late List<String> _validProperties = [];
 
   void consumeState(String prop, String value) {
     if (value.isEmpty) {
