@@ -135,4 +135,27 @@ void main() {
       expect(room.removeComponent('daytime'), false);
     });
   });
+
+  group("Room.hasComponent()", () {
+    late Farm farm;
+    late Room room;
+
+    setUp(() {
+      farm = Farm();
+      room = Room('r1', farm: farm);
+    });
+
+    test('returns null for unkown component.', () {
+      expect(room.hasComponent('unkownComponent'), null);
+    });
+
+    test('returns true when component exists.', () {
+      room.resolveComponent("daytime");
+      expect(room.hasComponent('daytime'), true);
+    });
+
+    test("returns false when component dont exist.", () {
+      expect(room.hasComponent('daytime'), false);
+    });
+  });
 }

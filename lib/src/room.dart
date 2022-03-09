@@ -22,6 +22,37 @@ class Room {
   Lighting? lighting;
   Thermometer? thermometer;
 
+  bool? hasComponent(String componentId) {
+    switch (componentId) {
+      case "daytime":
+        return daytime != null;
+      case "dehumidifier-relay":
+        return dehumidifier != null;
+      case "ebbflow-drain-relay":
+        return ebbflowDrain != null;
+      case "ebbflow-flood-relay":
+        return ebbflowFlood != null;
+      case "ebbflow":
+        return ebbflow != null;
+      case "exaust-relay":
+        return exaust != null;
+      case "humidifier-relay":
+        return humidifier != null;
+      case "humidity":
+        return hygrometer != null;
+      case "interval-irrigation":
+        return intervalIrrigation != null;
+      case "light":
+        return lightSensor != null;
+      case "light-relay":
+        return lighting != null;
+      case "temperature":
+        return thermometer != null;
+      default:
+        return null;
+    }
+  }
+
   Component? resolveComponent(String componentId) {
     switch (componentId) {
       case "daytime":
