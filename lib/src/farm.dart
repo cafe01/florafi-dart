@@ -325,7 +325,7 @@ class Farm {
     }
 
     // emit
-    _events.add(FarmEvent(FarmEventType.log, room: room, log: logLine));
+    _events.add(FarmEvent(FarmEventType.roomLog, room: room, log: logLine));
   }
 
   void _processRoomAlertMessage(Room room, FarmMessage msg) {

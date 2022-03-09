@@ -330,7 +330,7 @@ void main() {
       farm.processMessage('florafi/room/r1/log/error', logJson);
       events.skip(1); // skip roomInstall
       final event = await events.next;
-      expect(event.type, FarmEventType.log);
+      expect(event.type, FarmEventType.roomLog);
       expect(event.log, farm.logList[0]);
       expect(event.room?.id, "r1");
     });
