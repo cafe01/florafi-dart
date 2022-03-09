@@ -213,6 +213,50 @@ void main() {
     });
   });
 
+  group("_processRoomDeviceMessage()", () {
+    late Farm farm;
+    late StreamQueue<FarmEvent> events;
+
+    setUp(() {
+      farm = Farm();
+      events = StreamQueue<FarmEvent>(farm.events);
+    });
+
+    test('ignores invalid topic.', () {
+      farm.processMessage('florafi/room/r1/device', "foo");
+      farm.processMessage('florafi/room/r1/device/', "foo");
+      farm.processMessage('florafi/room/r1/device/uknown-component', "foo");
+      expect(farm.devices.length, 0);
+    });
+
+    test('binds device to room component.', () {
+      farm.processMessage('florafi/room/r1/device/daytime', "d1");
+      expect(farm.devices.length, 1);
+      expect(farm.rooms["r1"]?.daytime?.device, farm.devices["d1"]);
+    });
+
+    test('unbinds component from room.', () {
+      farm.processMessage('florafi/room/r1/device/daytime', "d1");
+      expect(farm.rooms["r1"]?.daytime, isA<Daytime>());
+      farm.processMessage('florafi/room/r1/device/daytime', "");
+      expect(farm.rooms["r1"]?.daytime, null);
+    });
+
+    test('emits component (un)install events.', () async {
+      farm.processMessage('florafi/room/r1/device/daytime', "d1");
+      events.skip(2); // skip roomInstall, deviceInstall
+      FarmEvent event = await events.next;
+      expect(event.type, FarmEventType.roomComponentInstall);
+      expect(event.room, farm.rooms["r1"]);
+
+      farm.processMessage('florafi/room/r1/device/daytime', "");
+      expect(farm.rooms["r1"]?.daytime, null);
+      event = await events.next;
+      expect(event.type, FarmEventType.roomComponentUninstall);
+      expect(event.room, farm.rooms["r1"]);
+    });
+  });
+
   group("_processRoomLogMessage()", () {
     late Farm farm;
     late StreamQueue<FarmEvent> events;

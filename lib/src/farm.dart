@@ -179,6 +179,9 @@ class Farm {
       case "control":
         _processRoomControlMessage(room, msg);
         break;
+      case "device":
+        _processRoomDeviceMessage(room, msg);
+        break;
       case "alert":
         _processRoomAlertMessage(room, msg);
         break;
@@ -239,6 +242,41 @@ class Farm {
     final propertyId = msg.shiftTopic();
     component.consumeControl(propertyId, msg.data);
   }
+
+  void _processRoomDeviceMessage(Room room, FarmMessage msg) {
+    // invalid topic
+    if (msg.topicParts.length != 1 || msg.topicParts[0].isEmpty) {
+      _log.warning("Invalid device message. (topic: ${msg.topic}");
+      return;
+    }
+
+    // resolve component
+    final componentId = msg.shiftTopic();
+
+    if (room.hasComponent(componentId) == null) {
+      _log.warning('Invalid device message: '
+          'unknown component "$componentId" (topic: ${msg.topic})');
+      return;
+    }
+
+    final component = room.getComponent(componentId);
+
+    // consume
+    late final FarmEventType eventType;
+    if (msg.data.isEmpty) {
+      component.device = null;
+      room.removeComponent(componentId);
+      eventType = FarmEventType.roomComponentUninstall;
+    } else {
+      final deviceId = msg.data;
+      final device = _discoverDevice(deviceId);
+      component.device = device;
+      eventType = FarmEventType.roomComponentInstall;
+    }
+
+    //  emit event
+    final event = FarmEvent(eventType, room: room);
+    _events.add(event);
   }
 
   void _processRoomLogMessage(Room room, FarmMessage msg) {
