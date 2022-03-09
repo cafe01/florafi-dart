@@ -404,7 +404,7 @@ void main() {
       events.skip(1); // skip roomInstall event
       var event = await events.next;
 
-      expect(event.type, FarmEventType.alert);
+      expect(event.type, FarmEventType.roomAlert);
       expect(event.room?.id, "r1");
       expect(event.alert?.id, "error-alert");
       expect(event.alert?.isActive, true);
@@ -412,7 +412,7 @@ void main() {
       farm.processMessage('florafi/room/r1/alert/error/error-alert', '');
 
       event = await events.next;
-      expect(event.type, FarmEventType.alert);
+      expect(event.type, FarmEventType.roomAlert);
       expect(event.room?.id, "r1");
       expect(event.alert?.id, "error-alert");
       expect(event.alert?.isActive, false);

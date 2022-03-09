@@ -11,10 +11,10 @@ enum FarmEventType {
   roomInstall,
   roomComponentInstall,
   roomState,
+  roomAlert,
   roomComponentUninstall,
   roomUninstall,
 
-  alert,
   notification,
   log,
 
