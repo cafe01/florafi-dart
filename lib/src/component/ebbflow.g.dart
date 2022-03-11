@@ -1,33 +1,52 @@
 // This file was auto-generated
 // Do NOT EDIT by hand
 
-import '../component.dart';
 import '../room.dart';
+import '../component.dart';
 
 class Ebbflow extends Component {
   @override
   final id = "ebbflow";
   @override
   final name = "Irrigação ebbflow";
-  Ebbflow({required Room room}) : super(room: room);
+  Ebbflow({required Room room})
+      : super(room: room, schema: {
+          "is_empty": bool,
+          "is_full": bool,
+          "last_empty": int,
+          "last_drain": int,
+          "last_flood": int,
+          "last_full": int,
+          "phase": int,
+          "flood_automation": bool,
+          "min_empty_seconds": int,
+          "min_drain_seconds": int,
+          "max_drain_minutes": int,
+          "max_flood_minutes": int,
+          "min_full_seconds": int,
+          "max_full_seconds": int,
+          "max_unfull_minutes": int,
+          "day_interval": int,
+          "night_interval": int
+        });
 
-  bool? get isEmpty => getBool("is_empty");
-  bool? get isFull => getBool("is_full");
-  int? get lastEmpty => getInt("last_empty");
-  int? get lastDrain => getInt("last_drain");
-  int? get lastFlood => getInt("last_flood");
-  int? get lastFull => getInt("last_full");
-  int? get phase => getInt("phase");
-  bool? get floodAutomation => getBool("flood_automation");
-  int? get minEmptySeconds => getInt("min_empty_seconds");
-  int? get minDrainSeconds => getInt("min_drain_seconds");
-  int? get maxDrainMinutes => getInt("max_drain_minutes");
-  int? get maxFloodMinutes => getInt("max_flood_minutes");
-  int? get minFullSeconds => getInt("min_full_seconds");
-  int? get maxFullSeconds => getInt("max_full_seconds");
-  int? get maxUnfullMinutes => getInt("max_unfull_minutes");
-  int? get dayInterval => getInt("day_interval");
-  int? get nightInterval => getInt("night_interval");
+  bool? get isEmpty => getProperty("is_empty") as bool?;
+  bool? get isFull => getProperty("is_full") as bool?;
+  int? get lastEmpty => getProperty("last_empty") as int?;
+  int? get lastDrain => getProperty("last_drain") as int?;
+  int? get lastFlood => getProperty("last_flood") as int?;
+  int? get lastFull => getProperty("last_full") as int?;
+  int? get phase => getProperty("phase") as int?;
+  bool? get floodAutomation => getProperty("flood_automation") as bool?;
+  int? get minEmptySeconds => getProperty("min_empty_seconds") as int?;
+  int? get minDrainSeconds => getProperty("min_drain_seconds") as int?;
+  int? get maxDrainMinutes => getProperty("max_drain_minutes") as int?;
+  int? get maxFloodMinutes => getProperty("max_flood_minutes") as int?;
+  int? get minFullSeconds => getProperty("min_full_seconds") as int?;
+  int? get maxFullSeconds => getProperty("max_full_seconds") as int?;
+  int? get maxUnfullMinutes => getProperty("max_unfull_minutes") as int?;
+  int? get dayInterval => getProperty("day_interval") as int?;
+  int? get nightInterval => getProperty("night_interval") as int?;
   set phase(int? value) => setControl("phase", value);
   set floodAutomation(bool? value) => setControl("flood_automation", value);
   set minEmptySeconds(int? value) => setControl("min_empty_seconds", value);

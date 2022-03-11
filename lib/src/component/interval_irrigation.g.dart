@@ -1,7 +1,6 @@
 // This file was auto-generated
 // Do NOT EDIT by hand
 
-import '../component.dart';
 import '../room.dart';
 import 'relay.g.dart';
 
@@ -10,12 +9,18 @@ class IntervalIrrigation extends Relay {
   final id = "interval_irrigation";
   @override
   final name = "Irrigação intermitente";
-  IntervalIrrigation({required Room room}) : super(room: room);
+  IntervalIrrigation({required Room room})
+      : super(room: room, schema: {
+          "day_interval": int,
+          "night_interval": int,
+          "duration": int,
+          "duration_unit": String
+        });
 
-  int? get dayInterval => getInt("day_interval");
-  int? get nightInterval => getInt("night_interval");
-  int? get duration => getInt("duration");
-  String? get durationUnit => getString("duration_unit");
+  int? get dayInterval => getProperty("day_interval") as int?;
+  int? get nightInterval => getProperty("night_interval") as int?;
+  int? get duration => getProperty("duration") as int?;
+  String? get durationUnit => getProperty("duration_unit") as String?;
   set dayInterval(int? value) => setControl("day_interval", value);
   set nightInterval(int? value) => setControl("night_interval", value);
   set duration(int? value) => setControl("duration", value);

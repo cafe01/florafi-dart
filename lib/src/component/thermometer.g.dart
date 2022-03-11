@@ -1,8 +1,8 @@
 // This file was auto-generated
 // Do NOT EDIT by hand
 
-import '../component.dart';
 import '../room.dart';
+import '../component.dart';
 
 class Thermometer extends Sensor {
   @override
@@ -11,11 +11,17 @@ class Thermometer extends Sensor {
   final name = "Termômetro";
   @override
   final measurementName = "Temperatura";
-  Thermometer({required Room room}) : super(room: room);
+  Thermometer({required Room room})
+      : super(room: room, schema: {
+          "last_value": double,
+          "low_temperature_limit": int,
+          "high_temperature_limit": int
+        });
 
-  double? get lastValue => getDouble("last_value");
-  int? get lowTemperatureLimit => getInt("low_temperature_limit");
-  int? get highTemperatureLimit => getInt("high_temperature_limit");
+  double? get lastValue => getProperty("last_value") as double?;
+  int? get lowTemperatureLimit => getProperty("low_temperature_limit") as int?;
+  int? get highTemperatureLimit =>
+      getProperty("high_temperature_limit") as int?;
   set lowTemperatureLimit(int? value) =>
       setControl("low_temperature_limit", value);
   set highTemperatureLimit(int? value) =>

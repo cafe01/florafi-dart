@@ -2,10 +2,11 @@
 defaults:
   extends: Component
   import:
-    - component.dart
     - room.dart
 components:
   thermometer:
+    import:
+      - component.dart
     extends: Sensor
     init_vars:
       name: Termômetro
@@ -21,6 +22,8 @@ components:
         type: int
   
   hygrometer:
+    import:
+      - component.dart
     extends: Sensor
     init_vars:
       name: Higrômetro
@@ -36,6 +39,8 @@ components:
         type: int
 
   light_sensor:
+    import:
+      - component.dart
     extends: Sensor
     init_vars:
       name: Sensor de luminosidade
@@ -51,6 +56,8 @@ components:
         type: int
 
   daytime:
+    import:
+      - component.dart
     init_vars:
       name: Fotoperíodo
     ro:
@@ -67,6 +74,8 @@ components:
         type: int
 
   ebbflow:
+    import:
+      - component.dart
     init_vars:
       name: Irrigação ebbflow
     ro:
@@ -123,6 +132,8 @@ components:
         type: int
 
   relay:
+    import:
+      - component.dart
     abstract: true
     ro:
       - name: last_on

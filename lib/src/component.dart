@@ -5,26 +5,72 @@ import 'room.dart';
 
 final _log = Logger("Component");
 
+class UnknownPropertyError implements Exception {
+  final String componentId;
+  final String propertyId;
+  UnknownPropertyError(this.componentId, this.propertyId);
+  @override
+  String toString() {
+    return "UnknownPropertyError: '$componentId.$propertyId'.";
+  }
+}
+
 abstract class Component {
-  Component({required this.room});
+  Component({required this.room, Map<String, Type>? schema}) {
+    if (schema != null) {
+      _schema.addAll(schema);
+    }
+  }
   Room room;
   Device? device;
   String get id;
   String get name;
-  final Map<String, String> _state = {};
+  final Map<String, Type> _schema = {};
+  final Map<String, Object?> _state = {};
   final Map<String, String> _control = {};
 
   bool get hasDevice => device != null;
   bool get isOnline => device?.isOnline ?? false;
 
-  // static late List<String> _validProperties = [];
+  bool hasProperty(String propertyId) {
+    return _schema.containsKey(propertyId);
+  }
 
-  void consumeState(String prop, String value) {
-    if (value.isEmpty) {
-      _state.remove(prop);
-    } else {
-      _state[prop] = value;
+  Object? getProperty(String propertyId) {
+    if (!hasProperty(propertyId)) {
+      throw UnknownPropertyError(id, propertyId);
     }
+    return _state[propertyId];
+  }
+
+  Object? consumeState(String propertyId, String value) {
+    final type = _schema[propertyId];
+    if (type == null) {
+      throw UnknownPropertyError(id, propertyId);
+    }
+
+    value = value.trim();
+    if (value.isEmpty) {
+      _state.remove(propertyId);
+      return null;
+    }
+
+    Object? parsedValue;
+
+    if (type == int) {
+      parsedValue = int.tryParse(value);
+    } else if (type == double) {
+      parsedValue = double.tryParse(value);
+    } else if (type == bool) {
+      parsedValue =
+          (value == "1" || value.toLowerCase() == "on") ? true : false;
+    } else {
+      parsedValue = value;
+    }
+
+    _state[propertyId] = parsedValue;
+
+    return parsedValue;
   }
 
   void consumeControl(String name, String endpoint) {
@@ -35,31 +81,6 @@ abstract class Component {
     }
   }
 
-  int? getInt(String prop) {
-    return int.tryParse(_state[prop] ?? "");
-  }
-
-  double? getDouble(String prop) {
-    return double.tryParse(_state[prop] ?? "");
-  }
-
-  bool? getBool(String prop) {
-    final value = _state[prop];
-    if (value == null) {
-      return null;
-    }
-
-    if (value == "1" || value.toLowerCase() == "on") {
-      return true;
-    }
-
-    return false;
-  }
-
-  String? getString(String prop) {
-    return _state[prop];
-  }
-
   void setControl(String prop, Object? value) {
     String? endpoint = _control[prop];
     if (endpoint == null) {
@@ -67,8 +88,14 @@ abstract class Component {
       return;
     }
 
-    String payload = "";
-    if (value != null) {
+    late String payload;
+    if (value == null) {
+      payload = "";
+    } else if (value is bool) {
+      payload = value ? "1" : "0";
+    } else if (value is double) {
+      payload = value.toStringAsFixed(2);
+    } else {
       payload = value.toString();
     }
 
@@ -77,7 +104,8 @@ abstract class Component {
 }
 
 abstract class Sensor extends Component {
-  Sensor({required Room room}) : super(room: room);
+  Sensor({required Room room, Map<String, Type>? schema})
+      : super(room: room, schema: {...?schema});
   final isSensor = true;
   String get measurementName;
 }

@@ -80,10 +80,7 @@ File buildComponent(String componentId,
 
   // ro props
   List<String> roProps = [];
-  for (final prop in schema["ro"] ?? []) {
-    roProps.add(buildGetter(prop));
-  }
-  for (final prop in schema["rw"] ?? []) {
+  for (final prop in [...?schema["ro"], ...?schema["rw"]]) {
     roProps.add(buildGetter(prop));
   }
 
@@ -136,51 +133,56 @@ String buildImport(String pkg, String srcPath, String outputPath) {
 }
 
 String buildConstructor(String componentId, Map schema) {
+  final className = componentId.toCamelCase().ucFirst();
   final isAbstract = schema["abstract"] as bool? ?? false;
-  List<String> varList = [];
+  List<String> output = [];
 
+  // override getters
   if (!isAbstract) {
+    List<String> overrides = [];
     final Map<String, dynamic> initVars = {"id": componentId};
     initVars.addAll(Map<String, dynamic>.from(schema["init_vars"] ?? {}));
 
     for (String varName in initVars.keys) {
       final value = initVars[varName];
-      varList.add('@override final $varName = "$value";');
+      overrides.add('@override final $varName = "$value";');
     }
+    output.add(overrides.join('\n'));
   }
 
-  final className = componentId.toCamelCase().ucFirst();
+  // constructor signature
+  if (isAbstract) {
+    // accept subclass schema
+    output.add("$className({required Room room, Map<String, Type>? schema})");
+  } else {
+    output.add("$className({required Room room})");
+  }
 
-  return "${varList.join('\n')}"
-      "$className({required Room room}) : super(room: room);\n";
+  // super
+  // List<Map> properties = [...?schema["ro"], ...?schema["rw"]];
+  List<String> properties = [];
+  for (final prop in [...?schema["ro"], ...?schema["rw"]]) {
+    String name = prop["name"];
+    String type = prop["type"];
+    properties.add('"$name": $type');
+  }
+
+  if (isAbstract) {
+    // merge subclass schema
+    output.add(
+        ': super(room: room, schema: { ${properties.join(",")}, ...?schema });');
+  } else {
+    output.add(': super(room: room, schema: { ${properties.join(",")} });');
+  }
+
+  return output.join("\n");
 }
 
 String buildGetter(YamlMap prop) {
-  // int? get lastValue => getInt("last_value");
-
   String type = prop["type"];
   String name = prop["name"];
   String accessor = name.toCamelCase();
-  late final String getter;
-
-  switch (type) {
-    case "int":
-      getter = "getInt";
-      break;
-    case "double":
-      getter = "getDouble";
-      break;
-    case "bool":
-      getter = "getBool";
-      break;
-    case "String":
-      getter = "getString";
-      break;
-    default:
-      throw Exception("Invalid getter type '$type'");
-  }
-
-  return '$type? get $accessor => $getter("$name");';
+  return '$type? get $accessor => getProperty("$name") as $type?;';
 }
 
 String buildSetter(YamlMap prop) {
