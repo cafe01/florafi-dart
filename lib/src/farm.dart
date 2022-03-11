@@ -1,9 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:florafi/florafi.dart';
-import 'package:florafi/src/communicator.dart';
-import 'package:florafi/src/notification.dart';
 import 'package:logging/logging.dart';
+
+import 'communicator.dart';
+import 'events.dart';
+import 'device.dart';
+import 'room.dart';
+import 'alert.dart';
+import 'log.dart';
+import 'notification.dart';
+import 'component.dart';
 
 class FarmMessage {
   String topic;
@@ -44,19 +50,27 @@ class Farm {
 
   Farm({this.name = "", this.id = 0, this.communicator});
 
-  void _emit(FarmEventType eventType,
-      {Room? room,
-      Device? device,
-      Alert? alert,
-      Notification? notification,
-      LogLine? log}) {
+  void _emit(
+    FarmEventType eventType, {
+    Room? room,
+    Device? device,
+    Alert? alert,
+    Notification? notification,
+    LogLine? log,
+    Component? component,
+    String? propertyId,
+    Object? propertyValue,
+  }) {
     final event = FarmEvent(eventType,
         farm: this,
         room: room,
         device: device,
         alert: alert,
         notification: notification,
-        log: log);
+        log: log,
+        component: component,
+        propertyId: propertyId,
+        propertyValue: propertyValue);
     _events.add(event);
   }
 
@@ -280,10 +294,14 @@ class Farm {
 
     // consume
     final propertyId = msg.shiftTopic();
-    component.consumeState(propertyId, msg.data);
+    final propertyValue = component.consumeState(propertyId, msg.data);
 
     //  emit event
-    _emit(FarmEventType.roomState, room: room);
+    _emit(FarmEventType.roomState,
+        room: room,
+        component: component,
+        propertyId: propertyId,
+        propertyValue: propertyValue);
   }
 
   void _processRoomControlMessage(Room room, FarmMessage msg) {

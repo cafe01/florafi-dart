@@ -1,5 +1,10 @@
-import 'package:florafi/florafi.dart';
-import 'package:florafi/src/notification.dart';
+import 'farm.dart';
+import 'room.dart';
+import 'device.dart';
+import 'alert.dart';
+import 'log.dart';
+import 'notification.dart';
+import 'component.dart';
 
 enum FarmEventType {
   deviceInstall,
@@ -31,7 +36,10 @@ class FarmEvent {
       this.device,
       this.alert,
       this.notification,
-      this.log});
+      this.log,
+      this.component,
+      this.propertyId,
+      this.propertyValue});
 
   FarmEventType type;
   Farm? farm;
@@ -40,4 +48,8 @@ class FarmEvent {
   Alert? alert;
   Notification? notification;
   LogLine? log;
+
+  Component? component;
+  String? propertyId;
+  Object? propertyValue;
 }
