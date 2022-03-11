@@ -5,11 +5,13 @@ import '../component.dart';
 import '../room.dart';
 
 class Thermometer extends Sensor {
-  Thermometer({required Room room}) : super(room: room) {
-    id = "thermometer";
-    name = "Termômetro";
-    measurementName = "Temperatura";
-  }
+  @override
+  final id = "thermometer";
+  @override
+  final name = "Termômetro";
+  @override
+  final measurementName = "Temperatura";
+  Thermometer({required Room room}) : super(room: room);
 
   double? get lastValue => getDouble("last_value");
   int? get lowTemperatureLimit => getInt("low_temperature_limit");

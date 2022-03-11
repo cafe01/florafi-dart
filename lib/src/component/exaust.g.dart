@@ -6,10 +6,11 @@ import '../room.dart';
 import 'relay.g.dart';
 
 class Exaust extends Relay {
-  Exaust({required Room room}) : super(room: room) {
-    id = "exaust";
-    name = "Exaustor";
-  }
+  @override
+  final id = "exaust";
+  @override
+  final name = "Exaustor";
+  Exaust({required Room room}) : super(room: room);
 
   bool? get daytimeEnabled => getBool("daytime_enabled");
   bool? get nighttimeEnabled => getBool("nighttime_enabled");

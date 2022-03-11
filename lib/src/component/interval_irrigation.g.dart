@@ -6,10 +6,11 @@ import '../room.dart';
 import 'relay.g.dart';
 
 class IntervalIrrigation extends Relay {
-  IntervalIrrigation({required Room room}) : super(room: room) {
-    id = "interval_irrigation";
-    name = "Irrigação intermitente";
-  }
+  @override
+  final id = "interval_irrigation";
+  @override
+  final name = "Irrigação intermitente";
+  IntervalIrrigation({required Room room}) : super(room: room);
 
   int? get dayInterval => getInt("day_interval");
   int? get nightInterval => getInt("night_interval");

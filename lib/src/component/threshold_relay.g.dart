@@ -5,10 +5,8 @@ import '../component.dart';
 import '../room.dart';
 import 'relay.g.dart';
 
-class ThresholdRelay extends Relay {
-  ThresholdRelay({required Room room}) : super(room: room) {
-    id = "threshold_relay";
-  }
+abstract class ThresholdRelay extends Relay {
+  ThresholdRelay({required Room room}) : super(room: room);
 
   int? get deactivationThreshold => getInt("deactivation_threshold");
   int? get activationThreshold => getInt("activation_threshold");

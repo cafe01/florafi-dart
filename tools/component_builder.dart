@@ -76,9 +76,7 @@ File buildComponent(String componentId,
       (schema["extends"] as String?) ?? (defaults["extends"] as String?) ?? "";
 
   // constructor
-  final Map<String, dynamic> initVars = {"id": componentId};
-  initVars.addAll(Map<String, dynamic>.from(schema["init_vars"] ?? {}));
-  String constructor = buildConstructor(className, initVars);
+  String constructor = buildConstructor(componentId, schema);
 
   // ro props
   List<String> roProps = [];
@@ -96,12 +94,15 @@ File buildComponent(String componentId,
   }
 
   // generate source code
+  final isAbstract = schema["abstract"] as bool? ?? false;
+  final classType = isAbstract ? "abstract class" : "class";
+
   String sourceCode = "// This file was auto-generated\n"
       "// Do NOT EDIT by hand\n";
 
   sourceCode += "\n${imports.join('\n')}\n";
   sourceCode += "\n\n";
-  sourceCode += "class $className extends $baseClass {\n"
+  sourceCode += "$classType $className extends $baseClass {\n"
       "\n$constructor\n"
       "\n${roProps.join('\n')}\n"
       "\n${rwProps.join('\n')}\n"
@@ -134,16 +135,24 @@ String buildImport(String pkg, String srcPath, String outputPath) {
   return "import '${path.relative(srcFile.path, from: outputPath)}';";
 }
 
-String buildConstructor(String className, Map initVars) {
+String buildConstructor(String componentId, Map schema) {
+  final isAbstract = schema["abstract"] as bool? ?? false;
   List<String> varList = [];
-  for (String varName in initVars.keys) {
-    final value = initVars[varName];
-    varList.add('$varName = "$value";');
+
+  if (!isAbstract) {
+    final Map<String, dynamic> initVars = {"id": componentId};
+    initVars.addAll(Map<String, dynamic>.from(schema["init_vars"] ?? {}));
+
+    for (String varName in initVars.keys) {
+      final value = initVars[varName];
+      varList.add('@override final $varName = "$value";');
+    }
   }
 
-  return "$className({required Room room}) : super(room: room) {\n"
-      "${varList.join('\n')}"
-      "\n}";
+  final className = componentId.toCamelCase().ucFirst();
+
+  return "${varList.join('\n')}"
+      "$className({required Room room}) : super(room: room);\n";
 }
 
 String buildGetter(YamlMap prop) {

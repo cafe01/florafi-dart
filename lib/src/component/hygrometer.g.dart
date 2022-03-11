@@ -5,11 +5,13 @@ import '../component.dart';
 import '../room.dart';
 
 class Hygrometer extends Sensor {
-  Hygrometer({required Room room}) : super(room: room) {
-    id = "hygrometer";
-    name = "Higrômetro";
-    measurementName = "Umidade";
-  }
+  @override
+  final id = "hygrometer";
+  @override
+  final name = "Higrômetro";
+  @override
+  final measurementName = "Umidade";
+  Hygrometer({required Room room}) : super(room: room);
 
   double? get lastValue => getDouble("last_value");
   int? get lowHumidityLimit => getInt("low_humidity_limit");

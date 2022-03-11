@@ -5,10 +5,11 @@ import '../component.dart';
 import '../room.dart';
 
 class Ebbflow extends Component {
-  Ebbflow({required Room room}) : super(room: room) {
-    id = "ebbflow";
-    name = "Irrigação ebbflow";
-  }
+  @override
+  final id = "ebbflow";
+  @override
+  final name = "Irrigação ebbflow";
+  Ebbflow({required Room room}) : super(room: room);
 
   bool? get isEmpty => getBool("is_empty");
   bool? get isFull => getBool("is_full");

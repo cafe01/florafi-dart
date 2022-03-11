@@ -6,8 +6,9 @@ import '../room.dart';
 import 'relay.g.dart';
 
 class EbbflowDrain extends Relay {
-  EbbflowDrain({required Room room}) : super(room: room) {
-    id = "ebbflow_drain";
-    name = "Ebbflow drain";
-  }
+  @override
+  final id = "ebbflow_drain";
+  @override
+  final name = "Ebbflow drain";
+  EbbflowDrain({required Room room}) : super(room: room);
 }

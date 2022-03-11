@@ -9,8 +9,8 @@ abstract class Component {
   Component({required this.room});
   Room room;
   Device? device;
-  late final String id;
-  late final String name;
+  String get id;
+  String get name;
   final Map<String, String> _state = {};
   final Map<String, String> _control = {};
 
@@ -76,8 +76,8 @@ abstract class Component {
   }
 }
 
-class Sensor extends Component {
+abstract class Sensor extends Component {
   Sensor({required Room room}) : super(room: room);
   final isSensor = true;
-  late final String measurementName;
+  String get measurementName;
 }

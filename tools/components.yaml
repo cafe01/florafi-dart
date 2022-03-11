@@ -123,6 +123,7 @@ components:
         type: int
 
   relay:
+    abstract: true
     ro:
       - name: last_on
         type: int
@@ -140,6 +141,7 @@ components:
         type: int
 
   threshold_relay:
+    abstract: true
     import:
       - component/relay.g.dart
     extends: Relay

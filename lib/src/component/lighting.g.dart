@@ -6,8 +6,9 @@ import '../room.dart';
 import 'relay.g.dart';
 
 class Lighting extends Relay {
-  Lighting({required Room room}) : super(room: room) {
-    id = "lighting";
-    name = "Iluminação";
-  }
+  @override
+  final id = "lighting";
+  @override
+  final name = "Iluminação";
+  Lighting({required Room room}) : super(room: room);
 }

@@ -5,11 +5,13 @@ import '../component.dart';
 import '../room.dart';
 
 class LightSensor extends Sensor {
-  LightSensor({required Room room}) : super(room: room) {
-    id = "light_sensor";
-    name = "Sensor de luminosidade";
-    measurementName = "Iluminação";
-  }
+  @override
+  final id = "light_sensor";
+  @override
+  final name = "Sensor de luminosidade";
+  @override
+  final measurementName = "Iluminação";
+  LightSensor({required Room room}) : super(room: room);
 
   int? get intensity => getInt("intensity");
   int? get minIntensityDayAlert => getInt("min_intensity_day_alert");

@@ -5,10 +5,11 @@ import '../component.dart';
 import '../room.dart';
 
 class Daytime extends Component {
-  Daytime({required Room room}) : super(room: room) {
-    id = "daytime";
-    name = "Fotoperíodo";
-  }
+  @override
+  final id = "daytime";
+  @override
+  final name = "Fotoperíodo";
+  Daytime({required Room room}) : super(room: room);
 
   bool? get isDaytime => getBool("is_daytime");
   int? get startHour => getInt("start_hour");
