@@ -5,7 +5,9 @@ import '../component.dart';
 import '../room.dart';
 
 class Relay extends Component {
-  Relay({required Room room}) : super(room: room);
+  Relay({required Room room}) : super(room: room) {
+    id = "relay";
+  }
 
   int? get lastOn => getInt("last_on");
   int? get lastOff => getInt("last_off");

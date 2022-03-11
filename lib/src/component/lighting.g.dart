@@ -7,6 +7,7 @@ import 'relay.g.dart';
 
 class Lighting extends Relay {
   Lighting({required Room room}) : super(room: room) {
+    id = "lighting";
     name = "Iluminação";
   }
 }

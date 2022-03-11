@@ -7,6 +7,7 @@ import 'threshold_relay.g.dart';
 
 class Dehumidifier extends ThresholdRelay {
   Dehumidifier({required Room room}) : super(room: room) {
+    id = "dehumidifier";
     name = "Desumidificador";
   }
 }

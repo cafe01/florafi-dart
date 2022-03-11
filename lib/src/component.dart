@@ -9,6 +9,7 @@ abstract class Component {
   Component({required this.room});
   Room room;
   Device? device;
+  late final String id;
   late final String name;
   final Map<String, String> _state = {};
   final Map<String, String> _control = {};

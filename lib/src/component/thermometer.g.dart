@@ -6,6 +6,7 @@ import '../room.dart';
 
 class Thermometer extends Sensor {
   Thermometer({required Room room}) : super(room: room) {
+    id = "thermometer";
     name = "Termômetro";
     measurementName = "Temperatura";
   }

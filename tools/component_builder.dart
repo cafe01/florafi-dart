@@ -76,7 +76,9 @@ File buildComponent(String componentId,
       (schema["extends"] as String?) ?? (defaults["extends"] as String?) ?? "";
 
   // constructor
-  String constructor = buildConstructor(className, schema["init_vars"]);
+  final Map<String, dynamic> initVars = {"id": componentId};
+  initVars.addAll(Map<String, dynamic>.from(schema["init_vars"] ?? {}));
+  String constructor = buildConstructor(className, initVars);
 
   // ro props
   List<String> roProps = [];
@@ -132,19 +134,14 @@ String buildImport(String pkg, String srcPath, String outputPath) {
   return "import '${path.relative(srcFile.path, from: outputPath)}';";
 }
 
-String buildConstructor(String className, YamlMap? initVars) {
-  String output = "$className({required Room room}) : super(room: room)";
-  if (initVars == null || initVars.isEmpty) {
-    return "$output;";
-  }
-
+String buildConstructor(String className, Map initVars) {
   List<String> varList = [];
   for (String varName in initVars.keys) {
     final value = initVars[varName];
     varList.add('$varName = "$value";');
   }
 
-  return "$output {\n"
+  return "$className({required Room room}) : super(room: room) {\n"
       "${varList.join('\n')}"
       "\n}";
 }

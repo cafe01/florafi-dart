@@ -6,6 +6,7 @@ import '../room.dart';
 
 class Hygrometer extends Sensor {
   Hygrometer({required Room room}) : super(room: room) {
+    id = "hygrometer";
     name = "Higrômetro";
     measurementName = "Umidade";
   }

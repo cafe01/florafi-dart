@@ -6,6 +6,7 @@ import '../room.dart';
 
 class Ebbflow extends Component {
   Ebbflow({required Room room}) : super(room: room) {
+    id = "ebbflow";
     name = "Irrigação ebbflow";
   }
 

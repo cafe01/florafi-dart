@@ -7,6 +7,7 @@ import 'relay.g.dart';
 
 class Exaust extends Relay {
   Exaust({required Room room}) : super(room: room) {
+    id = "exaust";
     name = "Exaustor";
   }
 

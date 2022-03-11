@@ -7,6 +7,7 @@ import 'relay.g.dart';
 
 class IntervalIrrigation extends Relay {
   IntervalIrrigation({required Room room}) : super(room: room) {
+    id = "interval_irrigation";
     name = "Irrigação intermitente";
   }
 

@@ -7,6 +7,7 @@ import 'relay.g.dart';
 
 class EbbflowFlood extends Relay {
   EbbflowFlood({required Room room}) : super(room: room) {
+    id = "ebbflow_flood";
     name = "Ebbflow flood";
   }
 }

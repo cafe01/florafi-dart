@@ -6,6 +6,7 @@ import '../room.dart';
 
 class Daytime extends Component {
   Daytime({required Room room}) : super(room: room) {
+    id = "daytime";
     name = "Fotoperíodo";
   }
 

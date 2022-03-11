@@ -6,6 +6,7 @@ import '../room.dart';
 
 class LightSensor extends Sensor {
   LightSensor({required Room room}) : super(room: room) {
+    id = "light_sensor";
     name = "Sensor de luminosidade";
     measurementName = "Iluminação";
   }
