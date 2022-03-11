@@ -17,18 +17,24 @@ enum FarmEventType {
   roomComponentUninstall,
   roomUninstall,
 
-  farmConnect,
+  farmConnected,
+  farmDisconnected,
   farmReconnect,
-  farmDisconnect,
-  farmOffline,
+  farmReconnected,
   farmConnectError,
 }
 
 class FarmEvent {
   FarmEvent(this.type,
-      {this.room, this.device, this.alert, this.notification, this.log});
+      {this.farm,
+      this.room,
+      this.device,
+      this.alert,
+      this.notification,
+      this.log});
 
   FarmEventType type;
+  Farm? farm;
   Room? room;
   Device? device;
   Alert? alert;
