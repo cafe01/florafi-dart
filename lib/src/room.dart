@@ -5,6 +5,10 @@ import 'farm.dart';
 class UnknownComponentError implements Exception {
   final String componentId;
   UnknownComponentError(this.componentId);
+  @override
+  String toString() {
+    return "UnknownComponentError: $componentId";
+  }
 }
 
 class Room {

@@ -8,6 +8,7 @@ export 'src/room.dart';
 export 'src/events.dart';
 export 'src/device.dart';
 export 'src/alert.dart';
+export 'src/notification.dart';
 export 'src/log.dart';
 export 'src/component/components.dart';
 export 'src/florafi.dart';
