@@ -11,7 +11,7 @@ class FarmMessage {
   String data;
   bool retained;
 
-  FarmMessage(this.topic, this.data, [this.retained = false]) {
+  FarmMessage(this.topic, this.data, {this.retained = false}) {
     topicParts = topic.split("/");
   }
 
@@ -27,7 +27,9 @@ class Farm {
   Map<String, Room> rooms = {};
   Map<String, Alert> alerts = {};
 
-  late StreamController<FarmEvent> _events;
+  late final StreamController<FarmEvent> _events =
+      StreamController<FarmEvent>.broadcast();
+
   Stream<FarmEvent> get events {
     return _events.stream;
   }
@@ -37,19 +39,76 @@ class Farm {
 
   Communicator? communicator;
 
-  Farm() {
-    // create events stream controller
-    _events = StreamController<FarmEvent>.broadcast();
+  final String name;
+  final int id;
+
+  Farm({this.name = "", this.id = 0, this.communicator});
+
+  void _emit(FarmEventType eventType,
+      {Room? room,
+      Device? device,
+      Alert? alert,
+      Notification? notification,
+      LogLine? log}) {
+    final event = FarmEvent(eventType,
+        farm: this,
+        room: room,
+        device: device,
+        alert: alert,
+        notification: notification,
+        log: log);
+    _events.add(event);
+  }
+
+  void _onConnected() {
+    _emit(FarmEventType.farmConnected);
+  }
+
+  void _onDisconnected() {
+    _emit(FarmEventType.farmDisconnected);
+  }
+
+  void _onAutoReconnect() {
+    _emit(FarmEventType.farmReconnect);
+  }
+
+  void _onAutoReconnected() {
+    _emit(FarmEventType.farmReconnected);
+  }
+
+  Future<void> connect() async {
+    if (communicator == null) {
+      throw StateError("set communicator before calling connect()");
+    }
+    communicator!.onConnected = _onConnected;
+    communicator!.onDisconnected = _onDisconnected;
+    communicator!.onAutoReconnect = _onAutoReconnect;
+    communicator!.onAutoReconnected = _onAutoReconnected;
+    try {
+      await communicator!.connect();
+    } on ConnectError {
+      _emit(FarmEventType.farmConnectError);
+    }
+    communicator!.messages.listen((message) {
+      processMessage(message);
+    });
   }
 
   void publish(String topic, String message,
       {retain = false, qos = CommunicatorQos.atLeastOnce}) {
     if (communicator == null) {
-      throw Exception("Can't publish without a communicator.");
+      throw Exception("Can't publish() before connect()");
     }
 
     _log.fine("publishing to $topic: $message (retain: $retain, qos: $qos)");
     communicator!.publish(topic, message);
+  }
+
+  int? subscribe(String topic, [qos = CommunicatorQos.atLeastOnce]) {
+    if (communicator == null) {
+      throw Exception("Can't subscribe before connect()");
+    }
+    return communicator!.subscribe(topic, qos);
   }
 
   Room _discoverRoom(String id) {
@@ -60,7 +119,7 @@ class Farm {
 
     // install
     final room = rooms[id] = Room(id, farm: this);
-    _events.add(FarmEvent(FarmEventType.roomInstall, room: room));
+    _emit(FarmEventType.roomInstall, room: room);
     return room;
   }
 
@@ -72,13 +131,15 @@ class Farm {
 
     // install
     final device = devices[id] = Device(id);
-    _events.add(FarmEvent(FarmEventType.deviceInstall, device: device));
+    _emit(FarmEventType.deviceInstall, device: device);
 
     return device;
   }
 
-  void processMessage(String topic, String data, [bool retained = false]) {
-    final message = FarmMessage(topic, data, retained);
+  void processMessage(FarmMessage message) {
+    if (message.topicParts.isEmpty) {
+      throw StateError("Invalid farm message: topicParts is empty! Wtf?!");
+    }
 
     final messageType = message.shiftTopic();
 
@@ -87,11 +148,17 @@ class Farm {
     } else if (messageType == "homie") {
       _processHomieMessage(message);
     } else {
-      _log.warning("Unknown message topic '$topic'");
+      _log.warning("Unknown message topic '${message.topic}'");
     }
   }
 
   void _processFlorafiMessage(FarmMessage message) {
+    if (message.topicParts.isEmpty) {
+      _log.warning(
+          "Ignoring invalid florafi message. (topic: ${message.topic})");
+      return;
+    }
+
     final subtopic = message.shiftTopic();
 
     if (subtopic == "room") {
@@ -216,8 +283,7 @@ class Farm {
     component.consumeState(propertyId, msg.data);
 
     //  emit event
-    final event = FarmEvent(FarmEventType.roomState, room: room);
-    _events.add(event);
+    _emit(FarmEventType.roomState, room: room);
   }
 
   void _processRoomControlMessage(Room room, FarmMessage msg) {
@@ -275,8 +341,7 @@ class Farm {
     }
 
     //  emit event
-    final event = FarmEvent(eventType, room: room);
-    _events.add(event);
+    _emit(eventType, room: room);
   }
 
   void _processRoomLogMessage(Room room, FarmMessage msg) {
@@ -325,7 +390,7 @@ class Farm {
     }
 
     // emit
-    _events.add(FarmEvent(FarmEventType.roomLog, room: room, log: logLine));
+    _emit(FarmEventType.roomLog, room: room, log: logLine);
   }
 
   void _processRoomAlertMessage(Room room, FarmMessage msg) {
@@ -372,14 +437,14 @@ class Farm {
     }
 
     // emit
-    _events.add(FarmEvent(FarmEventType.roomAlert, room: room, alert: alert));
+    _emit(FarmEventType.roomAlert, room: room, alert: alert);
   }
 
   void _processRoomNotificationMessage(Room room, FarmMessage msg) {
     final notification = Notification(message: msg.data, roomId: room.id);
 
-    _events.add(FarmEvent(FarmEventType.roomNotification,
-        room: room, notification: notification));
+    _emit(FarmEventType.roomNotification,
+        room: room, notification: notification);
   }
 
   void _processHomieMessage(FarmMessage msg) {
@@ -407,13 +472,13 @@ class Farm {
       final signal = int.tryParse(msg.data);
       if (signal != null) {
         device.wifi.signal = signal;
-        _events.add(FarmEvent(FarmEventType.deviceState, device: device));
+        _emit(FarmEventType.deviceState, device: device);
       }
     } else if (subtopics == r"$stats/uptime") {
       final uptime = int.tryParse(msg.data);
       if (uptime != null) {
         device.uptime = uptime;
-        _events.add(FarmEvent(FarmEventType.deviceState, device: device));
+        _emit(FarmEventType.deviceState, device: device);
       }
     } else if (subtopics == r"$mac") {
       device.wifi.mac = msg.data;
@@ -438,7 +503,7 @@ class Farm {
 
     // deviceLoaded event
     if (!deviceWasLodaded && device.isLoaded) {
-      _events.add(FarmEvent(FarmEventType.deviceLoaded, device: device));
+      _emit(FarmEventType.deviceLoaded, device: device);
     }
   }
 
@@ -467,8 +532,8 @@ class Farm {
             "Ignored invalid device '${device.id}' state: ${msg.data}");
     }
 
-    _events.add(FarmEvent(FarmEventType.deviceStatus, device: device));
-    _events.add(FarmEvent(FarmEventType.deviceState, device: device));
+    _emit(FarmEventType.deviceStatus, device: device);
+    _emit(FarmEventType.deviceState, device: device);
   }
 
   void _processHomieConfigMessage(Device device, FarmMessage msg) {
@@ -505,5 +570,7 @@ class Farm {
     if (config.containsKey('settings')) {
       device.settings = Map<String, dynamic>.of(config['settings']);
     }
+
+    _emit(FarmEventType.deviceState, device: device);
   }
 }
