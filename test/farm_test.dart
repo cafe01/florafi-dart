@@ -30,18 +30,18 @@ void main() {
     late Farm farm;
     late StreamQueue<FarmEvent> events;
 
-    final List<FarmMessage> messages = [
-      FarmMessage('florafi/device/d1', '{"room":"Q1","deactivated":false}'),
-      FarmMessage('florafi/device/d2', '{"room":"Q1","deactivated":true}'),
-      FarmMessage('florafi/device/d3', '{"room":"Q2","deactivated":false}'),
-    ];
-
     setUp(() {
       farm = Farm();
       events = StreamQueue<FarmEvent>(farm.events);
 
+      final List<FarmMessage> messages = [
+        FarmMessage('florafi/device/d1', '{"room":"Q1","deactivated":false}'),
+        FarmMessage('florafi/device/d2', '{"room":"Q1","deactivated":true}'),
+        FarmMessage('florafi/device/d3', '{"room":"Q2","deactivated":false}'),
+      ];
+
       for (var m in messages) {
-        farm.processMessage(m.topic, m.data);
+        farm.processMessage(m);
       }
     });
 
@@ -88,19 +88,19 @@ void main() {
 
     test('handles updated "deactivated" flag.', () {
       final data = '{"room":"Q1","deactivated":true}';
-      farm.processMessage('florafi/device/d1', data);
+      farm.processMessage(FarmMessage('florafi/device/d1', data));
       expect(farm.devices["d1"]?.isDeactivated, equals(true));
     });
 
     test('handles updated "room" flag.', () {
       final data = '{"room":"Q3","deactivated":false}';
-      farm.processMessage('florafi/device/d1', data);
+      farm.processMessage(FarmMessage('florafi/device/d1', data));
       expect(farm.devices.length, equals(3));
       expect(farm.rooms.length, equals(3));
     });
 
     test('handles "forget device" (empty) message.', () {
-      farm.processMessage('florafi/device/d1', '');
+      farm.processMessage(FarmMessage('florafi/device/d1', ''));
       expect(farm.devices.length, equals(2));
       expect(farm.devices.containsKey("d1"), equals(false));
       expect(farm.rooms.length, equals(2));
@@ -108,10 +108,11 @@ void main() {
 
     test('handles malformed topic.', () {
       final data = '{"room":"toBeIgnored","deactivated":false}';
-      farm.processMessage('florafi/device', data);
-      farm.processMessage('florafi/device/', data);
-      farm.processMessage('florafi/device/d4/', data);
-      farm.processMessage('florafi/device/d5/trailingSubTopic', data);
+      farm.processMessage(FarmMessage('florafi/device', data));
+      farm.processMessage(FarmMessage('florafi/device/', data));
+      farm.processMessage(FarmMessage('florafi/device/d4/', data));
+      farm.processMessage(
+          FarmMessage('florafi/device/d5/trailingSubTopic', data));
 
       expect(farm.devices.length, equals(3));
       expect(farm.rooms.length, equals(2));
@@ -119,7 +120,7 @@ void main() {
 
     test('handles malformed message (missing "room" key).', () {
       final data = '{"deactivated":false}';
-      farm.processMessage('florafi/device/d4', data);
+      farm.processMessage(FarmMessage('florafi/device/d4', data));
 
       expect(farm.devices.length, equals(3));
       expect(farm.rooms.length, equals(2));
@@ -127,7 +128,7 @@ void main() {
 
     test('handles malformed message (missing "deactivated" key).', () {
       final data = '{"room": "toBeIgnored"}';
-      farm.processMessage('florafi/device/d4', data);
+      farm.processMessage(FarmMessage('florafi/device/d4', data));
 
       expect(farm.devices.length, equals(3));
       expect(farm.rooms.length, equals(2));
@@ -135,7 +136,7 @@ void main() {
 
     test('handles empty "room" key.', () {
       final data = '{"room":"","deactivated":false}';
-      farm.processMessage('florafi/device/d4', data);
+      farm.processMessage(FarmMessage('florafi/device/d4', data));
 
       expect(farm.devices.length, equals(4));
       expect(farm.rooms.length, equals(2));
@@ -143,7 +144,7 @@ void main() {
 
     test('handles null "room" key.', () {
       final data = '{"room":null,"deactivated":false}';
-      farm.processMessage('florafi/device/d4', data);
+      farm.processMessage(FarmMessage('florafi/device/d4', data));
 
       expect(farm.devices.length, equals(4));
       expect(farm.rooms.length, equals(2));
@@ -160,22 +161,27 @@ void main() {
     });
 
     test('ignores invalid topic.', () {
-      farm.processMessage('florafi/room/r1/state', "foo");
-      farm.processMessage('florafi/room/r1/state/', "foo");
-      farm.processMessage('florafi/room/r1/state/unknown-component', "foo");
-      farm.processMessage('florafi/room/r1/state/unknown-component/', "foo");
-      farm.processMessage('florafi/room/r1/state/daytime/', "foo");
-      farm.processMessage('florafi/room/r1/state/daytime/foo/bar', "foo");
+      farm.processMessage(FarmMessage('florafi/room/r1/state', "foo"));
+      farm.processMessage(FarmMessage('florafi/room/r1/state/', "foo"));
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/state/unknown-component', "foo"));
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/state/unknown-component/', "foo"));
+      farm.processMessage(FarmMessage('florafi/room/r1/state/daytime/', "foo"));
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/state/daytime/foo/bar', "foo"));
       expect(farm.rooms["r1"]!.daytime, null);
     });
 
     test('consumes component state.', () {
-      farm.processMessage('florafi/room/r1/state/daytime/duration', "18");
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/state/daytime/duration', "18"));
       expect(farm.rooms["r1"]!.daytime!.duration, 18);
     });
 
     test('emits event.', () async {
-      farm.processMessage('florafi/room/r1/state/daytime/duration', "18");
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/state/daytime/duration', "18"));
       events.skip(1); // skip roomInstall
       final event = await events.next;
       expect(event.type, FarmEventType.roomState);
@@ -195,17 +201,22 @@ void main() {
     });
 
     test('ignores invalid topic.', () {
-      farm.processMessage('florafi/room/r1/control', "foo");
-      farm.processMessage('florafi/room/r1/control/', "foo");
-      farm.processMessage('florafi/room/r1/control/unknown-component', "foo");
-      farm.processMessage('florafi/room/r1/control/unknown-component/', "foo");
-      farm.processMessage('florafi/room/r1/control/daytime/', "foo");
-      farm.processMessage('florafi/room/r1/control/daytime/foo/bar', "foo");
+      farm.processMessage(FarmMessage('florafi/room/r1/control', "foo"));
+      farm.processMessage(FarmMessage('florafi/room/r1/control/', "foo"));
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/control/unknown-component', "foo"));
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/control/unknown-component/', "foo"));
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/control/daytime/', "foo"));
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/control/daytime/foo/bar', "foo"));
       expect(farm.rooms["r1"]!.daytime, null);
     });
 
     test('consumes component control.', () {
-      farm.processMessage('florafi/room/r1/control/daytime/duration', "foobar");
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/control/daytime/duration', "foobar"));
       farm.rooms["r1"]!.daytime!.duration = 6;
       var msg = communicator.sentMessages.removeAt(0);
       expect(msg.topic, "foobar");
@@ -223,33 +234,34 @@ void main() {
     });
 
     test('ignores invalid topic.', () {
-      farm.processMessage('florafi/room/r1/device', "foo");
-      farm.processMessage('florafi/room/r1/device/', "foo");
-      farm.processMessage('florafi/room/r1/device/uknown-component', "foo");
+      farm.processMessage(FarmMessage('florafi/room/r1/device', "foo"));
+      farm.processMessage(FarmMessage('florafi/room/r1/device/', "foo"));
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/device/uknown-component', "foo"));
       expect(farm.devices.length, 0);
     });
 
     test('binds device to room component.', () {
-      farm.processMessage('florafi/room/r1/device/daytime', "d1");
+      farm.processMessage(FarmMessage('florafi/room/r1/device/daytime', "d1"));
       expect(farm.devices.length, 1);
       expect(farm.rooms["r1"]?.daytime?.device, farm.devices["d1"]);
     });
 
     test('unbinds component from room.', () {
-      farm.processMessage('florafi/room/r1/device/daytime', "d1");
+      farm.processMessage(FarmMessage('florafi/room/r1/device/daytime', "d1"));
       expect(farm.rooms["r1"]?.daytime, isA<Daytime>());
-      farm.processMessage('florafi/room/r1/device/daytime', "");
+      farm.processMessage(FarmMessage('florafi/room/r1/device/daytime', ""));
       expect(farm.rooms["r1"]?.daytime, null);
     });
 
     test('emits component (un)install events.', () async {
-      farm.processMessage('florafi/room/r1/device/daytime', "d1");
+      farm.processMessage(FarmMessage('florafi/room/r1/device/daytime', "d1"));
       events.skip(2); // skip roomInstall, deviceInstall
       FarmEvent event = await events.next;
       expect(event.type, FarmEventType.roomComponentInstall);
       expect(event.room, farm.rooms["r1"]);
 
-      farm.processMessage('florafi/room/r1/device/daytime', "");
+      farm.processMessage(FarmMessage('florafi/room/r1/device/daytime', ""));
       expect(farm.rooms["r1"]?.daytime, null);
       event = await events.next;
       expect(event.type, FarmEventType.roomComponentUninstall);
@@ -271,18 +283,19 @@ void main() {
     });
 
     test(r'ignores invalid topic.', () {
-      farm.processMessage('florafi/room/r1/log', logJson);
-      farm.processMessage('florafi/room/r1/log/', logJson);
+      farm.processMessage(FarmMessage('florafi/room/r1/log', logJson));
+      farm.processMessage(FarmMessage('florafi/room/r1/log/', logJson));
       expect(farm.logList.length, 0);
     });
 
     test(r'ignores invalid log level.', () {
-      farm.processMessage('florafi/room/r1/log/invalid-level', logJson);
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/log/invalid-level', logJson));
       expect(farm.logList.length, 0);
     });
 
     test(r'handles "debug" log.', () {
-      farm.processMessage('florafi/room/r1/log/debug', logJson);
+      farm.processMessage(FarmMessage('florafi/room/r1/log/debug', logJson));
       expect(farm.logList.length, 1);
       final logLine = farm.logList[0];
       expect(logLine.level, LogLevel.debug);
@@ -295,39 +308,39 @@ void main() {
     });
 
     test(r'handles "info" log.', () {
-      farm.processMessage('florafi/room/r1/log/info', logJson);
+      farm.processMessage(FarmMessage('florafi/room/r1/log/info', logJson));
       expect(farm.logList.length, 1);
       expect(farm.logList[0].level, LogLevel.info);
     });
 
     test(r'handles "warning" log.', () {
-      farm.processMessage('florafi/room/r1/log/warning', logJson);
+      farm.processMessage(FarmMessage('florafi/room/r1/log/warning', logJson));
       expect(farm.logList.length, 1);
       expect(farm.logList[0].level, LogLevel.warning);
     });
 
     test(r'handles "error" log.', () {
-      farm.processMessage('florafi/room/r1/log/error', logJson);
+      farm.processMessage(FarmMessage('florafi/room/r1/log/error', logJson));
       expect(farm.logList.length, 1);
       expect(farm.logList[0].level, LogLevel.error);
     });
 
     test('handles log storage.', () {
       farm.logListSize = 0;
-      farm.processMessage('florafi/room/r1/log/debug', logJson);
+      farm.processMessage(FarmMessage('florafi/room/r1/log/debug', logJson));
       expect(farm.logList.length, 0);
 
       farm.logListSize = 2;
-      farm.processMessage('florafi/room/r1/log/debug', logJson);
+      farm.processMessage(FarmMessage('florafi/room/r1/log/debug', logJson));
       expect(farm.logList.length, 1);
-      farm.processMessage('florafi/room/r1/log/info', logJson);
+      farm.processMessage(FarmMessage('florafi/room/r1/log/info', logJson));
       expect(farm.logList.length, 2);
-      farm.processMessage('florafi/room/r1/log/warning', logJson);
+      farm.processMessage(FarmMessage('florafi/room/r1/log/warning', logJson));
       expect(farm.logList.length, 2);
     });
 
     test(r'emits "log" event.', () async {
-      farm.processMessage('florafi/room/r1/log/error', logJson);
+      farm.processMessage(FarmMessage('florafi/room/r1/log/error', logJson));
       events.skip(1); // skip roomInstall
       final event = await events.next;
       expect(event.type, FarmEventType.roomLog);
@@ -346,22 +359,23 @@ void main() {
     });
 
     test(r'ignores invalid topic.', () {
-      farm.processMessage('florafi/room/r1/alert', '123');
-      farm.processMessage('florafi/room/r1/alert/', '123');
-      farm.processMessage('florafi/room/r1/alert/info', '123');
-      farm.processMessage('florafi/room/r1/alert/info/', '123');
+      farm.processMessage(FarmMessage('florafi/room/r1/alert', '123'));
+      farm.processMessage(FarmMessage('florafi/room/r1/alert/', '123'));
+      farm.processMessage(FarmMessage('florafi/room/r1/alert/info', '123'));
+      farm.processMessage(FarmMessage('florafi/room/r1/alert/info/', '123'));
 
       expect(farm.alerts.length, 0);
     });
 
     test(r'ignores invalid type.', () {
       farm.processMessage(
-          'florafi/room/r1/alert/invalid-type/some-alert', '123');
+          FarmMessage('florafi/room/r1/alert/invalid-type/some-alert', '123'));
       expect(farm.alerts.length, 0);
     });
 
     test(r'handles info alert.', () {
-      farm.processMessage('florafi/room/r1/alert/info/info-alert', '123');
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/alert/info/info-alert', '123'));
       expect(farm.alerts.containsKey('r1.info-alert'), true);
       expect(farm.alerts.length, 1);
       final alert = farm.alerts["r1.info-alert"];
@@ -373,31 +387,36 @@ void main() {
     });
 
     test(r'handles warning alert.', () {
-      farm.processMessage('florafi/room/r1/alert/warning/warning-alert', '123');
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/alert/warning/warning-alert', '123'));
       expect(farm.alerts.containsKey('r1.warning-alert'), true);
       expect(farm.alerts.length, 1);
       expect(farm.alerts["r1.warning-alert"]?.type, AlertType.warning);
     });
 
     test(r'handles error alert.', () {
-      farm.processMessage('florafi/room/r1/alert/error/error-alert', '123');
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/alert/error/error-alert', '123'));
       expect(farm.alerts.containsKey('r1.error-alert'), true);
       expect(farm.alerts.length, 1);
       expect(farm.alerts["r1.error-alert"]?.type, AlertType.error);
     });
 
     test(r'handles alert dismiss.', () {
-      farm.processMessage('florafi/room/r1/alert/error/error-alert', '123');
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/alert/error/error-alert', '123'));
       expect(farm.alerts.containsKey('r1.error-alert'), true);
       expect(farm.alerts.length, 1);
 
-      farm.processMessage('florafi/room/r1/alert/error/error-alert', '');
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/alert/error/error-alert', ''));
       expect(farm.alerts.containsKey('r1.error-alert'), false);
       expect(farm.alerts.length, 0);
     });
 
     test(r'emits alert events.', () async {
-      farm.processMessage('florafi/room/r1/alert/error/error-alert', '123');
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/alert/error/error-alert', '123'));
       expect(farm.alerts.containsKey('r1.error-alert'), true);
       expect(farm.alerts.length, 1);
 
@@ -409,7 +428,8 @@ void main() {
       expect(event.alert?.id, "error-alert");
       expect(event.alert?.isActive, true);
 
-      farm.processMessage('florafi/room/r1/alert/error/error-alert', '');
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/alert/error/error-alert', ''));
 
       event = await events.next;
       expect(event.type, FarmEventType.roomAlert);
@@ -430,7 +450,8 @@ void main() {
     });
 
     test(r'just works.', () async {
-      farm.processMessage('florafi/room/r1/notification', 'foobar');
+      farm.processMessage(
+          FarmMessage('florafi/room/r1/notification', 'foobar'));
       final event = await events.next;
       final notification = event.notification;
       expect(event.room?.id, 'r1');
@@ -461,7 +482,7 @@ void main() {
       events = StreamQueue<FarmEvent>(farm.events);
 
       for (var m in messages) {
-        farm.processMessage(m.topic, m.data);
+        farm.processMessage(FarmMessage(m.topic, m.data));
       }
 
       events.skip(1); // skip FarmEventType.deviceInstall
@@ -472,7 +493,7 @@ void main() {
       expect(device?.status, DeviceStatus.unknown);
       expect(device?.isOnline, false);
 
-      farm.processMessage(r'homie/d1/$state', 'init');
+      farm.processMessage(FarmMessage(r'homie/d1/$state', 'init'));
       expect(device?.status, DeviceStatus.init);
       expect(device?.isOnline, true);
 
@@ -484,23 +505,23 @@ void main() {
       expect(event.type, FarmEventType.deviceState);
       expect(event.device, equals(device));
 
-      farm.processMessage(r'homie/d1/$state', 'disconnected');
+      farm.processMessage(FarmMessage(r'homie/d1/$state', 'disconnected'));
       expect(device?.status, DeviceStatus.disconnected);
       expect(device?.isOnline, false);
 
-      farm.processMessage(r'homie/d1/$state', 'ready');
+      farm.processMessage(FarmMessage(r'homie/d1/$state', 'ready'));
       expect(device?.status, DeviceStatus.ready);
       expect(device?.isOnline, true);
 
-      farm.processMessage(r'homie/d1/$state', 'lost');
+      farm.processMessage(FarmMessage(r'homie/d1/$state', 'lost'));
       expect(device?.status, DeviceStatus.lost);
       expect(device?.isOnline, false);
 
-      farm.processMessage(r'homie/d1/$state', 'alert');
+      farm.processMessage(FarmMessage(r'homie/d1/$state', 'alert'));
       expect(device?.status, DeviceStatus.alert);
       expect(device?.isOnline, true);
 
-      farm.processMessage(r'homie/d1/$state', 'sleeping');
+      farm.processMessage(FarmMessage(r'homie/d1/$state', 'sleeping'));
       expect(device?.status, DeviceStatus.sleeping);
       expect(device?.isOnline, false);
     });
@@ -508,7 +529,7 @@ void main() {
     test(r'handles $stats/uptime message.', () async {
       final device = farm.devices["d1"];
       expect(device?.uptime, -1);
-      farm.processMessage(r'homie/d1/$stats/uptime', '123');
+      farm.processMessage(FarmMessage(r'homie/d1/$stats/uptime', '123'));
       expect(device?.uptime, 123);
 
       var event = await events.next;
@@ -518,30 +539,31 @@ void main() {
 
     test(r'handles $name message.', () {
       final device = farm.devices["d1"];
-      farm.processMessage(r'homie/d1/$name', 'Some Device');
+      farm.processMessage(FarmMessage(r'homie/d1/$name', 'Some Device'));
       expect(device?.name, equals('Some Device'));
     });
 
     test(r'handles $mac message.', () {
       final device = farm.devices["d1"];
-      farm.processMessage(r'homie/d1/$mac', '11:22:33:44:55:66');
+      farm.processMessage(FarmMessage(r'homie/d1/$mac', '11:22:33:44:55:66'));
       expect(device?.wifi.mac, '11:22:33:44:55:66');
       expect(device?.wifi.isLoaded, false);
     });
 
     test(r'handles $localip message.', () {
       final device = farm.devices["d1"];
-      farm.processMessage(r'homie/d1/$localip', '1.2.3.4');
+      farm.processMessage(FarmMessage(r'homie/d1/$localip', '1.2.3.4'));
       expect(device?.wifi.ip, '1.2.3.4');
       expect(device?.wifi.isLoaded, false);
     });
 
     test(r'handles $stats/signal message.', () async {
       final device = farm.devices["d1"];
-      farm.processMessage(r'homie/d1/$stats/signal', 'invalidPayload');
+      farm.processMessage(
+          FarmMessage(r'homie/d1/$stats/signal', 'invalidPayload'));
       expect(device?.wifi.signal, -1);
 
-      farm.processMessage(r'homie/d1/$stats/signal', '78');
+      farm.processMessage(FarmMessage(r'homie/d1/$stats/signal', '78'));
       expect(device?.wifi.signal, 78);
 
       expect(device?.wifi.isLoaded, false);
@@ -554,13 +576,13 @@ void main() {
     test(r'handles $fw messages.', () {
       final device = farm.devices["d1"];
 
-      farm.processMessage(r'homie/d1/$fw/name', 'fw-name');
-      farm.processMessage(r'homie/d1/$fw/version', '1.2.3');
+      farm.processMessage(FarmMessage(r'homie/d1/$fw/name', 'fw-name'));
+      farm.processMessage(FarmMessage(r'homie/d1/$fw/version', '1.2.3'));
       expect(device?.firmware.name, 'fw-name');
       expect(device?.firmware.version, '1.2.3');
       expect(device?.firmware.isLoaded, false);
 
-      farm.processMessage(r'homie/d1/$fw/checksum', 'abcd');
+      farm.processMessage(FarmMessage(r'homie/d1/$fw/checksum', 'abcd'));
       expect(device?.firmware.checksum, 'abcd');
       expect(device?.firmware.isLoaded, true);
     });
@@ -568,7 +590,8 @@ void main() {
     test(r'handles $implementation/config message.', () {
       final device = farm.devices["d1"];
 
-      farm.processMessage(r'homie/d1/$implementation/config', configJson);
+      farm.processMessage(
+          FarmMessage(r'homie/d1/$implementation/config', configJson));
 
       expect(device?.name, 'MyDevice');
       expect(device?.wifi.ssid, 'MyNetwork');
@@ -583,16 +606,17 @@ void main() {
     test(r'satisfies device.isLodaded', () async {
       final device = farm.devices["d1"];
 
-      farm.processMessage(r'homie/d1/$state', 'ready');
-      farm.processMessage(r'homie/d1/$stats/uptime', '123');
-      farm.processMessage(r'homie/d1/$name', 'Some Device');
-      farm.processMessage(r'homie/d1/$mac', '11:22:33:44:55:66');
-      farm.processMessage(r'homie/d1/$localip', '1.2.3.4');
-      farm.processMessage(r'homie/d1/$stats/signal', '78');
-      farm.processMessage(r'homie/d1/$fw/name', 'fw-name');
-      farm.processMessage(r'homie/d1/$fw/version', '1.2.3');
-      farm.processMessage(r'homie/d1/$fw/checksum', 'abcd');
-      farm.processMessage(r'homie/d1/$implementation/config', configJson);
+      farm.processMessage(FarmMessage(r'homie/d1/$state', 'ready'));
+      farm.processMessage(FarmMessage(r'homie/d1/$stats/uptime', '123'));
+      farm.processMessage(FarmMessage(r'homie/d1/$name', 'Some Device'));
+      farm.processMessage(FarmMessage(r'homie/d1/$mac', '11:22:33:44:55:66'));
+      farm.processMessage(FarmMessage(r'homie/d1/$localip', '1.2.3.4'));
+      farm.processMessage(FarmMessage(r'homie/d1/$stats/signal', '78'));
+      farm.processMessage(FarmMessage(r'homie/d1/$fw/name', 'fw-name'));
+      farm.processMessage(FarmMessage(r'homie/d1/$fw/version', '1.2.3'));
+      farm.processMessage(FarmMessage(r'homie/d1/$fw/checksum', 'abcd'));
+      farm.processMessage(
+          FarmMessage(r'homie/d1/$implementation/config', configJson));
 
       expect(device?.isLoaded, true);
 
