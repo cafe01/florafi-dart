@@ -1,11 +1,16 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 
-class AccessDeniedError implements Exception {
+class UnauthorizedError implements Exception {
   final int code;
   final String? reason;
-  AccessDeniedError(this.code, this.reason);
+  UnauthorizedError(this.code, this.reason);
 }
+
+class UnauthenticatedError implements Exception {}
+
+class ForbiddenError implements Exception {}
 
 class FarmTicket {
   final int farmId;
@@ -39,11 +44,40 @@ class FloraCloud {
   String? accessToken;
   String? refreshToken;
 
+  Future<void> _refreshAccessToken() async {
+    if (refreshToken == null) {
+      return;
+    }
+
+    final res = await post("auth/refresh-access-token",
+        json: {"refreshToken": refreshToken}, authenticated: false);
+
+    // success
+    if (res.statusCode == HttpStatus.ok) {
+      final data = jsonDecode(res.body);
+      accessToken = data["accessToken"] as String?;
+      return;
+    }
+
+    // failed
+    refreshToken = null;
+  }
+
   // low-level api request methods
   Future<http.Response> request(http.Request request,
       {authenticated = true}) async {
     // authenticated request
     if (authenticated) {
+      if (accessToken == null) {
+        if (refreshToken == null) {
+          throw UnauthenticatedError();
+        }
+
+        // try again
+        await _refreshAccessToken();
+        return this.request(request, authenticated: authenticated);
+      }
+
       request.headers["Authorization"] = "Bearer $accessToken";
     }
 
@@ -56,9 +90,20 @@ class FloraCloud {
       client.close();
     }
 
-    // access denied
-    if (res.statusCode == 401 || res.statusCode == 403) {
-      throw AccessDeniedError(res.statusCode, res.reasonPhrase);
+    // unauthorized
+    if (res.statusCode == HttpStatus.unauthorized) {
+      accessToken == null;
+      if (refreshToken == null) {
+        throw UnauthorizedError(res.statusCode, res.reasonPhrase);
+      }
+
+      await _refreshAccessToken();
+      return this.request(request, authenticated: authenticated);
+    }
+
+    // forbidden
+    if (res.statusCode == HttpStatus.forbidden) {
+      throw ForbiddenError();
     }
 
     return res;
@@ -118,7 +163,7 @@ class FloraCloud {
     late http.Response res;
     try {
       res = await post("auth/sign-in", json: credential, authenticated: false);
-    } on AccessDeniedError {
+    } on UnauthorizedError {
       return false;
     }
 
