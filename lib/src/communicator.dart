@@ -21,7 +21,7 @@ abstract class Communicator {
   late final String username;
   late final String password;
   late final String clientId;
-  bool autoReconnect = true;
+  // bool autoReconnect = true;
 
   late final Stream<FarmMessage> messages;
 
@@ -45,6 +45,11 @@ abstract class Communicator {
 
   Future<void> connect();
   void disconnect();
+
+  bool get isConnected => false;
+  bool get isConnecting => false;
+  bool get isDisconnected => false;
+  bool get isDisconnecting => false;
 
   int publish(String topic, String data,
       {CommunicatorQos qos = CommunicatorQos.atLeastOnce, bool retain = false});

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:math';
+import 'dart:convert' show utf8;
 
 import 'package:florafi/florafi.dart';
 import 'package:florafi/src/communicator.dart';
@@ -27,12 +28,13 @@ class MqttCommunicator extends Communicator {
     this.port = port;
     this.username = username;
     this.password = password;
-    this.autoReconnect = autoReconnect;
     clientId = clientIdentifier ?? Random().nextInt(1 << 32).toString();
 
     final client = mqtt = MqttServerClient.withPort(server, clientId, port);
     client.setProtocolV311();
     client.secure = true;
+
+    client.autoReconnect = autoReconnect;
 
     messages = _messages.stream;
   }
@@ -47,6 +49,21 @@ class MqttCommunicator extends Communicator {
         return MqttQos.exactlyOnce;
     }
   }
+
+  @override
+  bool get isConnected =>
+      mqtt.connectionStatus?.state == MqttConnectionState.connected;
+  @override
+  bool get isConnecting =>
+      mqtt.connectionStatus?.state == MqttConnectionState.connecting;
+  @override
+  bool get isDisconnected =>
+      mqtt.connectionStatus?.state == MqttConnectionState.disconnected;
+  @override
+  bool get isDisconnecting =>
+      mqtt.connectionStatus?.state == MqttConnectionState.disconnecting;
+
+  StreamSubscription? _messageSubscription;
 
   @override
   Future<void> connect() async {
@@ -70,12 +87,12 @@ class MqttCommunicator extends Communicator {
     }
 
     // stream farm messages
-    mqtt.updates!.listen((List<MqttReceivedMessage<MqttMessage?>> packets) {
+    _messageSubscription =
+        mqtt.updates!.listen((List<MqttReceivedMessage<MqttMessage?>> packets) {
       for (final received in packets) {
         _log.fine("received message on topic '${received.topic}'");
         final msg = received.payload as MqttPublishMessage;
-        final data =
-            MqttPublishPayload.bytesToStringAsString(msg.payload.message);
+        final data = utf8.decode(msg.payload.message);
         _messages.add(
             FarmMessage(received.topic, data, retained: msg.header!.retain));
       }
@@ -100,7 +117,8 @@ class MqttCommunicator extends Communicator {
   }
 
   @override
-  void disconnect() {
+  Future<void> disconnect() async {
+    await _messageSubscription?.cancel();
     mqtt.disconnect();
   }
 }
