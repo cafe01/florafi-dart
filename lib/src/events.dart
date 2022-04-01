@@ -8,6 +8,7 @@ import 'component.dart';
 
 enum FarmEventType {
   deviceInstall,
+  deviceUpdate,
   deviceState,
   deviceStatus,
   deviceLoaded,
@@ -15,6 +16,7 @@ enum FarmEventType {
 
   roomInstall,
   roomComponentInstall,
+  roomUpdate,
   roomState,
   roomAlert,
   roomNotification,
@@ -23,6 +25,7 @@ enum FarmEventType {
   roomUninstall,
 
   farmConnected,
+  farmReady,
   farmDisconnected,
   farmReconnect,
   farmReconnected,
@@ -31,7 +34,7 @@ enum FarmEventType {
 
 class FarmEvent {
   FarmEvent(this.type,
-      {this.farm,
+      {required this.farm,
       this.room,
       this.device,
       this.alert,
@@ -42,7 +45,7 @@ class FarmEvent {
       this.propertyValue});
 
   FarmEventType type;
-  Farm? farm;
+  Farm farm;
   Room? room;
   Device? device;
   Alert? alert;
