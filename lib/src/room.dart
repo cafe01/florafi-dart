@@ -1,5 +1,9 @@
+import 'alert.dart';
 import 'component/components.dart';
+import 'device.dart';
+import 'events.dart';
 import 'farm.dart';
+import 'log.dart';
 
 // final _log = Logger('Room');
 class UnknownComponentError implements Exception {
@@ -14,8 +18,45 @@ class UnknownComponentError implements Exception {
 class Room {
   Room(this.id, {required this.farm});
 
-  String id;
   Farm farm;
+  String id;
+  String? name;
+
+  String get label => name ?? id;
+
+  rename(String name) {
+    farm.publish("florafi/room/$id/\$name", name);
+  }
+
+  LogLine? lastLog;
+
+  List<Alert> get alerts =>
+      farm.alerts.values.where((a) => a.roomId == id).toList();
+
+  List<Device> get devices =>
+      farm.devices.values.where((d) => d.room == this).toList();
+
+  Stream<FarmEvent> get events =>
+      farm.events.where((event) => event.room == this);
+
+  List<Component> get components {
+    List<Component> list = [
+      if (daytime != null) daytime!,
+      if (ebbflow != null) ebbflow!,
+      if (ebbflowFlood != null) ebbflowFlood!,
+      if (ebbflowDrain != null) ebbflowDrain!,
+      if (lighting != null) lighting!,
+      if (intervalIrrigation != null) intervalIrrigation!,
+      if (exaust != null) exaust!,
+      if (dehumidifier != null) dehumidifier!,
+      if (humidifier != null) humidifier!,
+      if (thermometer != null) thermometer!,
+      if (hygrometer != null) hygrometer!,
+      if (lightSensor != null) lightSensor!,
+    ];
+    // if (daytime != null) list.add(daytime!);
+    return list;
+  }
 
   Daytime? daytime;
   Dehumidifier? dehumidifier;
