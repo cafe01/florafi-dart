@@ -10,16 +10,22 @@ components:
     extends: Sensor
     init_vars:
       name: Termômetro
-      measurementName: Temperatura    
+      measurementId: temperature
+      measurementName: Temperatura
+      measurementUnit: "º"
+      measurementProperty: last_value
     ro:
       - name: last_value
         type: double
+        accessorAliasOverride: measurement
     rw:
       - name: low_temperature_limit
         type: int
+        accessorAliasOverride: goodLowerBound
 
       - name: high_temperature_limit
         type: int
+        accessorAliasOverride: goodUpperBound
   
   hygrometer:
     import:
@@ -27,33 +33,47 @@ components:
     extends: Sensor
     init_vars:
       name: Higrômetro
+      measurementId: humidity
       measurementName: Umidade
+      measurementUnit: "%"
+      measurementProperty: last_value
     ro:
       - name: last_value
         type: double
+        accessorAliasOverride: measurement
     rw:
       - name: low_humidity_limit
         type: int
+        accessorAliasOverride: goodLowerBound
 
       - name: high_humidity_limit
         type: int
+        accessorAliasOverride: goodUpperBound
 
   light_sensor:
     import:
-      - component.dart
-    extends: Sensor
+      - component/light_sensor_base.dart
+    extends: LightSensorBase
     init_vars:
       name: Sensor de luminosidade
+      measurementId: light
       measurementName: Iluminação
+      measurementUnit: "%"
+      measurementProperty: intensity
     ro:
       - name: intensity
         type: int
+        accessorAliasOverride: measurement
+
     rw:
       - name: min_intensity_day_alert
         type: int
+        accessorAliasOverride: goodLowerBound
+
 
       - name: max_intensity_night_alert
         type: int
+        accessorAliasOverride: goodUpperBound
 
   daytime:
     import:

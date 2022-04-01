@@ -10,7 +10,13 @@ class Thermometer extends Sensor {
   @override
   final name = "Termômetro";
   @override
+  final measurementId = "temperature";
+  @override
   final measurementName = "Temperatura";
+  @override
+  final measurementUnit = "º";
+  @override
+  final measurementProperty = "last_value";
   Thermometer({required Room room})
       : super(room: room, schema: {
           "last_value": double,
@@ -19,11 +25,21 @@ class Thermometer extends Sensor {
         });
 
   double? get lastValue => getProperty("last_value") as double?;
+  @override
+  double? get measurement => getProperty("last_value") as double?;
   int? get lowTemperatureLimit => getProperty("low_temperature_limit") as int?;
+  @override
+  int? get goodLowerBound => getProperty("low_temperature_limit") as int?;
   int? get highTemperatureLimit =>
       getProperty("high_temperature_limit") as int?;
+  @override
+  int? get goodUpperBound => getProperty("high_temperature_limit") as int?;
   set lowTemperatureLimit(int? value) =>
       setControl("low_temperature_limit", value);
+  @override
+  set goodLowerBound(num? value) => setControl("low_temperature_limit", value);
   set highTemperatureLimit(int? value) =>
       setControl("high_temperature_limit", value);
+  @override
+  set goodUpperBound(num? value) => setControl("high_temperature_limit", value);
 }

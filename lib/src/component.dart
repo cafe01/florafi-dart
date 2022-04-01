@@ -1,6 +1,7 @@
 import 'package:logging/logging.dart';
 
 import 'device.dart';
+import 'events.dart';
 import 'room.dart';
 
 final _log = Logger("Component");
@@ -25,6 +26,10 @@ abstract class Component {
   Device? device;
   String get id;
   String get name;
+
+  Stream<FarmEvent> get events =>
+      room.events.where((event) => event.component == this);
+
   final Map<String, Type> _schema = {};
   final Map<String, Object?> _state = {};
   final Map<String, String> _control = {};
@@ -107,5 +112,24 @@ abstract class Sensor extends Component {
   Sensor({required Room room, Map<String, Type>? schema})
       : super(room: room, schema: {...?schema});
   final isSensor = true;
+  String get measurementId;
   String get measurementName;
+  String get measurementUnit => "";
+  String get measurementProperty;
+  num? get measurement;
+  num? get goodUpperBound;
+  num? get goodLowerBound;
+  set goodUpperBound(num? value);
+  set goodLowerBound(num? value);
+
+  bool get isGoodMeasurement {
+    final value = measurement;
+    final lowerBound = goodLowerBound;
+    final upperBound = goodUpperBound;
+    if (value != null) {
+      if (lowerBound != null && value < lowerBound) return false;
+      if (upperBound != null && value > upperBound) return false;
+    }
+    return true;
+  }
 }

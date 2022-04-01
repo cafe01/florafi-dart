@@ -81,13 +81,13 @@ File buildComponent(String componentId,
   // ro props
   List<String> roProps = [];
   for (final prop in [...?schema["ro"], ...?schema["rw"]]) {
-    roProps.add(buildGetter(prop));
+    roProps.addAll(buildGetter(prop));
   }
 
   // rw props
   List<String> rwProps = [];
   for (final prop in schema["rw"] ?? []) {
-    roProps.add(buildSetter(prop));
+    roProps.addAll(buildSetter(prop));
   }
 
   // generate source code
@@ -178,20 +178,30 @@ String buildConstructor(String componentId, Map schema) {
   return output.join("\n");
 }
 
-String buildGetter(YamlMap prop) {
+List<String> buildGetter(YamlMap prop) {
+  final result = <String>[];
   String type = prop["type"];
   String name = prop["name"];
   String accessor = name.toCamelCase();
-  return '$type? get $accessor => getProperty("$name") as $type?;';
+  result.add('$type? get $accessor => getProperty("$name") as $type?;');
+  if (prop.containsKey("accessorAliasOverride")) {
+    result.add(
+        '@override $type? get ${prop["accessorAliasOverride"]} => getProperty("$name") as $type?;');
+  }
+  return result;
 }
 
-String buildSetter(YamlMap prop) {
-  // set fooBar(int? value) => setControl("foo_bar", value);
-
+List<String> buildSetter(YamlMap prop) {
+  final result = <String>[];
   String type = prop["type"];
   String name = prop["name"];
   String accessor = name.toCamelCase();
-  return 'set $accessor($type? value) => setControl("$name", value);';
+  result.add('set $accessor($type? value) => setControl("$name", value);');
+  if (prop.containsKey("accessorAliasOverride")) {
+    result.add(
+        '@override set ${prop["accessorAliasOverride"]}(num? value) => setControl("$name", value);');
+  }
+  return result;
 }
 
 void buildComponentsFile(List<File> generatedFiles, String outputPath) {
