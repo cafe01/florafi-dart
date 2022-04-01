@@ -1,3 +1,5 @@
+import 'package:florafi/florafi.dart';
+
 class DeviceWifiInfo {
   String ip = "";
   String mac = "";
@@ -36,6 +38,7 @@ class Device {
 
   String id;
   String name = "";
+  Room? room;
 
   bool isDeactivated = false;
   int uptime = -1;
@@ -46,6 +49,8 @@ class Device {
   final mqtt = DeviceMQTTInfo();
   final firmware = DeviceFirmwareInfo();
   Map<String, dynamic> settings = {};
+
+  List<Component> components = [];
 
   bool get isLoaded {
     return name.isNotEmpty &&
