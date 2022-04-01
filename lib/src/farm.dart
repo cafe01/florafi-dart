@@ -665,7 +665,6 @@ class Farm {
       }
 
       _emit(FarmEventType.deviceStatus, device: device);
-      _emit(FarmEventType.deviceState, device: device);
     }
   }
 

@@ -608,10 +608,6 @@ void main() {
       expect(event.type, FarmEventType.deviceStatus);
       expect(event.device, equals(device));
 
-      event = await events.next;
-      expect(event.type, FarmEventType.deviceState);
-      expect(event.device, equals(device));
-
       farm.processMessage(FarmMessage(r'homie/d1/$state', 'disconnected'));
       expect(device?.status, DeviceStatus.disconnected);
       expect(device?.isOnline, false);
