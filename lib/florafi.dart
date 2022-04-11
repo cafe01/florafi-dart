@@ -14,3 +14,5 @@ export 'src/component/components.dart';
 export 'src/florafi.dart';
 export 'src/cloud.dart';
 export 'src/flux_utils.dart';
+export 'src/communicator.dart';
+export 'src/mqtt_communicator.dart';

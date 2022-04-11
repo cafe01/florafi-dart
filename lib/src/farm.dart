@@ -12,13 +12,24 @@ import 'notification.dart';
 import 'component.dart';
 
 class FarmMessage {
-  String topic;
-  late List<String> topicParts;
+  FarmMessage(String topic, this.data, {this.retained = false}) {
+    _topic = topic;
+  }
+
+  late String _topic;
+  String get topic => _topic;
+  set topic(String newTopic) {
+    _topic = newTopic;
+    _topicParts = null;
+  }
+
   String data;
   bool retained;
 
-  FarmMessage(this.topic, this.data, {this.retained = false}) {
-    topicParts = topic.split("/");
+  List<String>? _topicParts;
+  List<String> get topicParts {
+    _topicParts ??= _topic.split("/");
+    return _topicParts!;
   }
 
   String shiftTopic() {
@@ -56,6 +67,8 @@ class Farm {
   bool get isDisconnected => communicator?.isDisconnected == true;
   bool get isDisconnecting => communicator?.isDisconnecting == true;
 
+  FarmMessage? _lastMessage;
+
   Farm({this.name = "", this.id = 0, this.communicator});
 
   void _emit(
@@ -69,16 +82,19 @@ class Farm {
     String? propertyId,
     Object? propertyValue,
   }) {
-    final event = FarmEvent(eventType,
-        farm: this,
-        room: room,
-        device: device,
-        alert: alert,
-        notification: notification,
-        log: log,
-        component: component,
-        propertyId: propertyId,
-        propertyValue: propertyValue);
+    final event = FarmEvent(
+      eventType,
+      farm: this,
+      room: room,
+      device: device,
+      alert: alert,
+      notification: notification,
+      log: log,
+      component: component,
+      propertyId: propertyId,
+      propertyValue: propertyValue,
+      fromRetainedMessage: _lastMessage?.retained ?? false,
+    );
     _events.add(event);
   }
 
@@ -211,6 +227,7 @@ class Farm {
       throw StateError("Invalid farm message: topicParts is empty! Wtf?!");
     }
 
+    _lastMessage = message;
     _handleIsReady(debounce: message.retained);
 
     final messageType = message.shiftTopic();

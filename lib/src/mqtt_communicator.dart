@@ -4,7 +4,6 @@ import 'dart:math';
 import 'dart:convert' show utf8;
 
 import 'package:florafi/florafi.dart';
-import 'package:florafi/src/communicator.dart';
 import 'package:logging/logging.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
@@ -17,22 +16,25 @@ class MqttCommunicator extends Communicator {
   final StreamController<FarmMessage> _messages =
       StreamController<FarmMessage>.broadcast();
 
-  MqttCommunicator(
-      {required String server,
-      required int port,
-      required String username,
-      required String password,
-      String? clientIdentifier,
-      bool autoReconnect = true}) {
+  MqttCommunicator({
+    required String server,
+    required int port,
+    String? username,
+    String? password,
+    String? clientIdentifier,
+    bool autoReconnect = true,
+    bool secure = true,
+  }) {
     this.server = server;
     this.port = port;
     this.username = username;
     this.password = password;
-    clientId = clientIdentifier ?? Random().nextInt(1 << 32).toString();
+    clientId = clientIdentifier ??
+        "florafi_dart_+" + Random().nextInt(1 << 32).toString();
 
     final client = mqtt = MqttServerClient.withPort(server, clientId, port);
     client.setProtocolV311();
-    client.secure = true;
+    client.secure = secure;
 
     client.autoReconnect = autoReconnect;
 
@@ -63,7 +65,7 @@ class MqttCommunicator extends Communicator {
   bool get isDisconnecting =>
       mqtt.connectionStatus?.state == MqttConnectionState.disconnecting;
 
-  StreamSubscription? _messageSubscription;
+  StreamSubscription? _mqttMessageSubscription;
 
   @override
   Future<void> connect() async {
@@ -77,24 +79,35 @@ class MqttCommunicator extends Communicator {
     try {
       await mqtt.connect(username, password);
     } on NoConnectionException catch (e) {
-      _log.fine("connect() error: $e");
+      _log.warning("connect() error: $e");
       mqtt.disconnect();
       throw ConnectError(e.toString());
     } on SocketException catch (e) {
-      _log.fine("connect() error: $e");
+      _log.warning("connect() error: $e");
       mqtt.disconnect();
       throw ConnectError(e.toString());
     }
 
     // stream farm messages
-    _messageSubscription =
+    _mqttMessageSubscription =
         mqtt.updates!.listen((List<MqttReceivedMessage<MqttMessage?>> packets) {
       for (final received in packets) {
-        _log.fine("received message on topic '${received.topic}'");
         final msg = received.payload as MqttPublishMessage;
-        final data = utf8.decode(msg.payload.message);
-        _messages.add(
-            FarmMessage(received.topic, data, retained: msg.header!.retain));
+
+        String? data;
+
+        try {
+          data = utf8.decode(msg.payload.message);
+          _log.fine("received mqtt message on '${received.topic}': $data");
+        } on FormatException catch (e) {
+          _log.severe(
+              "Error parsing mqtt message on '${received.topic}': ${msg.payload.message}");
+        }
+
+        if (data != null) {
+          _messages.add(
+              FarmMessage(received.topic, data, retained: msg.header!.retain));
+        }
       }
     });
   }
@@ -118,7 +131,7 @@ class MqttCommunicator extends Communicator {
 
   @override
   Future<void> disconnect() async {
-    await _messageSubscription?.cancel();
+    await _mqttMessageSubscription?.cancel();
     mqtt.disconnect();
   }
 }

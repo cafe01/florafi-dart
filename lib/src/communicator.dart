@@ -18,12 +18,14 @@ class ConnectError implements Exception {
 abstract class Communicator {
   late final String server;
   late final int port;
-  late final String username;
-  late final String password;
+  late final String? username;
+  late final String? password;
   late final String clientId;
   // bool autoReconnect = true;
 
   late final Stream<FarmMessage> messages;
+
+  // TODO make callbacks a list
 
   /// Client disconnect callback, called on unsolicited disconnect.
   /// This will not be called even if set if [autoReconnect} is set,instead
