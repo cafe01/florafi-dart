@@ -1,3 +1,8 @@
+## 0.2.0
+- FarmEvent: added fromRetainedMessage flag
+- FloraCloud: implemented fluxQuery()
+- FloraCloud: improved authentication
+- Florafi: implemented connect() and readFarms()
 
 ## 0.1.1
 
