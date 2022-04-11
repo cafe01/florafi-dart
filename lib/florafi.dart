@@ -13,3 +13,4 @@ export 'src/log.dart';
 export 'src/component/components.dart';
 export 'src/florafi.dart';
 export 'src/cloud.dart';
+export 'src/flux_utils.dart';

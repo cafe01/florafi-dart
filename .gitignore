@@ -12,3 +12,4 @@ build/
 pubspec.lock
 tool/build_components
 test/cloud_test.dart
+tool/flux_query.dart

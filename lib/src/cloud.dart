@@ -190,5 +190,14 @@ class FloraCloud {
   // high-level user request
 
   // high-level farm request
-
+  Future<String> fluxQuery({farmId = 0, required String raw}) async {
+    final json = {"raw": raw};
+    final headers = {
+      "Accept-Encoding": "gzip",
+      "Accept": "application/csv",
+    };
+    final res =
+        await post("farms/$farmId/flux_query", json: json, headers: headers);
+    return res.body;
+  }
 }
