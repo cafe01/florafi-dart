@@ -33,16 +33,19 @@ enum FarmEventType {
 }
 
 class FarmEvent {
-  FarmEvent(this.type,
-      {required this.farm,
-      this.room,
-      this.device,
-      this.alert,
-      this.notification,
-      this.log,
-      this.component,
-      this.propertyId,
-      this.propertyValue});
+  FarmEvent(
+    this.type, {
+    required this.farm,
+    this.room,
+    this.device,
+    this.alert,
+    this.notification,
+    this.log,
+    this.component,
+    this.propertyId,
+    this.propertyValue,
+    this.fromRetainedMessage = false,
+  });
 
   FarmEventType type;
   Farm farm;
@@ -55,4 +58,5 @@ class FarmEvent {
   Component? component;
   String? propertyId;
   Object? propertyValue;
+  bool fromRetainedMessage;
 }
