@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:florafi/florafi.dart';
 
 class DeviceWifiInfo {
@@ -34,8 +36,8 @@ class DeviceFirmwareInfo {
 enum DeviceStatus { unknown, init, ready, disconnected, lost, sleeping, alert }
 
 class Device {
-  Device(this.id);
-
+  Device({required this.id, required this.farm});
+  Farm farm;
   String id;
   String name = "";
   Room? room;
@@ -51,6 +53,9 @@ class Device {
   Map<String, dynamic> settings = {};
 
   List<Component> components = [];
+
+  Stream<FarmEvent> get events =>
+      farm.events.where((event) => event.device == this);
 
   bool get isLoaded {
     return name.isNotEmpty &&
@@ -72,5 +77,14 @@ class Device {
       case DeviceStatus.sleeping:
         return false;
     }
+  }
+
+  void moveTo(String roomId) {
+    sendSettings({"garden_room": roomId});
+  }
+
+  void sendSettings(Map<String, dynamic> settings) {
+    farm.publish("homie/$id/\$implementation/config/set",
+        jsonEncode({"settings": settings}));
   }
 }
