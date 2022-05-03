@@ -8,7 +8,9 @@ class FluxSeries {
 }
 
 Future<List<FluxSeries>> parseFluxSeries(
-    {Stream<String>? stream, String? csv}) async {
+    {Stream<String>? stream,
+    String? csv,
+    required List<String> keyColumns}) async {
   assert(stream != null || csv != null);
 
   final series = <FluxSeries>[];
@@ -22,12 +24,7 @@ Future<List<FluxSeries>> parseFluxSeries(
   const skipColumns = ["result", "_start", "_stop"];
 
   void createNewSeries(FluxRow row) {
-    const skipKeyField = ["result", "_time", "_start", "_stop", "_value"];
-    final List<String> keyParts = [];
-    row.forEach((key, value) {
-      if (!skipKeyField.contains(key) && value != null) keyParts.add(value);
-    });
-
+    final keyParts = keyColumns.map((col) => row[col].toString());
     series.add(FluxSeries(keyParts.join('.')));
   }
 
@@ -87,9 +84,9 @@ Future<List<FluxSeries>> parseFluxSeries(
     // add to series
     if (series.isEmpty || table != currentTable) {
       currentTable = table;
-      print("New series: $table (${series.length})");
+      // print("New series: $table (${series.length})");
       createNewSeries(row);
-      print(" - key: ${series.last.key}");
+      // print(" - key: ${series.last.key}");
     }
 
     if (row["_time"] == null) {

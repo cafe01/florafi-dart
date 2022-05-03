@@ -97,7 +97,6 @@ class FloraCloud {
 
   AccessToken? accessToken;
 
-  String? _accessToken_old;
   String? refreshToken;
 
   Uri _buildUrl(String path, {Map<String, dynamic>? queryParameters}) {
@@ -285,7 +284,7 @@ class FloraCloud {
 
   // high-level farm request
   Future<String> fluxQuery({farmId = 0, required String raw}) async {
-    final json = {"raw": raw};
+    final json = {"raw": raw.replaceAll("\n", " ")};
     final headers = {
       "Accept-Encoding": "gzip",
       "Accept": "application/csv",
