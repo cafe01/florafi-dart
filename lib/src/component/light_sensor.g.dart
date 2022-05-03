@@ -12,7 +12,7 @@ class LightSensor extends LightSensorBase {
   @override
   final measurementId = "light";
   @override
-  final measurementName = "Iluminação";
+  final measurementName = "luminosidade";
   @override
   final measurementUnit = "%";
   @override

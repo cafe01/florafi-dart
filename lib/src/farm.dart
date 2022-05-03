@@ -102,6 +102,8 @@ class Farm {
     if (isReady) return;
 
     markReady() {
+      _log.fine(
+          "'$name' is ready with ${rooms.values.length} rooms (debounce=$debounce)");
       isReady = true;
       _emit(FarmEventType.farmReady);
     }
@@ -213,7 +215,7 @@ class Farm {
     }
 
     // install
-    final device = devices[id] = Device(id);
+    final device = devices[id] = Device(id: id, farm: this);
     _emit(FarmEventType.deviceInstall, device: device);
     if (communicator != null) {
       subscribe("homie/${device.id}/#");
