@@ -1,3 +1,13 @@
+## 0.3.0
+- improved component to device binding
+- improved DayTimeExtension
+- implemented EbbflowExtension
+- LightSensor: changed measurement name
+- MqttCommunicator: fixed client id
+- Device: added reboot(), forget()
+- added Phmter component
+
+
 ## 0.2.0
 - FarmEvent: added fromRetainedMessage flag
 - FloraCloud: implemented fluxQuery()
