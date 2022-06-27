@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:clock/clock.dart';
 import 'package:logging/logging.dart';
 
 import 'communicator.dart';
@@ -68,8 +69,12 @@ class Farm {
   bool get isDisconnecting => communicator?.isDisconnecting == true;
 
   FarmMessage? _lastMessage;
-
-  Farm({this.name = "", this.id = 0, this.communicator});
+  Clock clock;
+  Farm(
+      {this.name = "",
+      this.id = 0,
+      this.clock = const Clock(),
+      this.communicator});
 
   void _emit(
     FarmEventType eventType, {
@@ -182,7 +187,7 @@ class Farm {
     }
 
     _log.fine("publishing to $topic: $message (retain: $retain, qos: $qos)");
-    communicator!.publish(topic, message);
+    communicator!.publish(topic, message, qos: qos, retain: retain);
   }
 
   int? subscribe(String topic, [qos = CommunicatorQos.atLeastOnce]) {
@@ -216,6 +221,7 @@ class Farm {
 
     // install
     final device = devices[id] = Device(id: id, farm: this);
+
     _emit(FarmEventType.deviceInstall, device: device);
     if (communicator != null) {
       subscribe("homie/${device.id}/#");
@@ -226,7 +232,8 @@ class Farm {
 
   void processMessage(FarmMessage message) {
     if (message.topicParts.isEmpty) {
-      throw StateError("Invalid farm message: topicParts is empty! Wtf?!");
+      throw StateError(
+          "Invalid farm message: topicParts is empty! (topic: ${message.topic})");
     }
 
     _lastMessage = message;
@@ -276,6 +283,10 @@ class Farm {
         final room = device.room;
 
         devices.remove(deviceId);
+
+        // unlink from components
+        unlinkFromComponent(Component c) => c.device = null;
+        device.components.forEach(unlinkFromComponent);
 
         // emit room update
         if (room != null) _emit(FarmEventType.roomUpdate, room: room);
@@ -450,42 +461,85 @@ class Farm {
       return;
     }
 
-    // resolve component
+    // validate component
     final componentId = msg.shiftTopic();
+    final roomHasComponent = room.hasComponent(componentId);
 
-    if (room.hasComponent(componentId) == null) {
+    if (roomHasComponent == null) {
       _log.fine('Invalid device message: '
           'unknown component "$componentId" (topic: ${msg.topic})');
       return;
     }
 
-    final component = room.getComponent(componentId);
-
-    // consume
-    Device? device;
-
-    late final FarmEventType eventType;
-    if (msg.data.isEmpty) {
-      device = component.device;
-      component.device = null;
-      room.removeComponent(componentId);
-      eventType = FarmEventType.roomComponentUninstall;
-    } else {
-      final deviceId = msg.data;
-      device = _discoverDevice(deviceId);
-      component.device = device;
-      eventType = FarmEventType.roomComponentInstall;
-    }
-
-    //  emit event
-    _emit(eventType, room: room);
-
-    // update device component list
-    if (device != null) {
+    updateDeviceComponentList(Device? device) {
+      if (device == null) return;
       device.components =
           room.components.where((e) => e.device == device).toList();
       _emit(FarmEventType.deviceUpdate, device: device);
     }
+
+    // Device? device;
+
+    // uninstall component
+    if (msg.data.isEmpty) {
+      // component gone already
+      if (!roomHasComponent) return;
+
+      // remove component from room
+      final component = room.removeComponent(componentId)!;
+      _emit(FarmEventType.roomComponentUninstall, room: room);
+      updateDeviceComponentList(component.device);
+      component.device = null;
+      return;
+    }
+
+    // install component
+    final device = devices[msg.data];
+
+    // garbage reference from unknown (forgotten) device
+    if (device == null) {
+      _log.info("Cleaning garbage device ref at '${msg.topic}'");
+      publish(msg.topic, "", retain: true);
+      return;
+    }
+
+    final component = room.getComponent(componentId);
+    _emit(FarmEventType.roomComponentInstall, room: room);
+    if (component.device != device) {
+      updateDeviceComponentList(component.device);
+      component.device = device;
+      updateDeviceComponentList(device);
+    }
+
+    // if (component.device?.id != deviceId) {
+    // }
+
+    // final component = room.getComponent(componentId);
+
+    // // consume
+
+    // late final FarmEventType eventType;
+    // if (msg.data.isEmpty) {
+    //   device = component.device;
+    //   component.device = null;
+    //   room.removeComponent(componentId);
+    //   eventType = FarmEventType.roomComponentUninstall;
+    // } else {
+    //   final deviceId = msg.data;
+    //   device = _discoverDevice(deviceId);
+    //   component.device = device;
+    //   eventType = FarmEventType.roomComponentInstall;
+    // }
+
+    // //  emit event
+    // _emit(eventType, room: room);
+
+    // // update device component list
+    // if (device != null) {
+    //   device.components =
+    //       room.components.where((e) => e.device == device).toList();
+    //   _emit(FarmEventType.deviceUpdate, device: device);
+    // }
   }
 
   void _processRoomLogMessage(Room room, FarmMessage msg) {

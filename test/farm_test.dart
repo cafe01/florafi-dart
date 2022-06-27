@@ -327,12 +327,16 @@ void main() {
     });
 
     test('binds device to room component.', () {
+      farm.processMessage(FarmMessage(
+          'florafi/device/d1', '{"room":"r1","deactivated":false}'));
       farm.processMessage(FarmMessage('florafi/room/r1/device/daytime', "d1"));
       expect(farm.devices.length, 1);
       expect(farm.rooms["r1"]?.daytime?.device, farm.devices["d1"]);
     });
 
     test('unbinds component from room.', () {
+      farm.processMessage(FarmMessage(
+          'florafi/device/d1', '{"room":"r1","deactivated":false}'));
       farm.processMessage(FarmMessage('florafi/room/r1/device/daytime', "d1"));
       expect(farm.rooms["r1"]?.daytime, isA<Daytime>());
       farm.processMessage(FarmMessage('florafi/room/r1/device/daytime', ""));
@@ -340,10 +344,14 @@ void main() {
     });
 
     test('emits component (un)install events.', () async {
+      farm.processMessage(FarmMessage(
+          'florafi/device/d1', '{"room":"r1","deactivated":false}'));
       farm.processMessage(FarmMessage('florafi/room/r1/device/daytime', "d1"));
       expect((await events.next).type, FarmEventType.farmReady);
-      expect((await events.next).type, FarmEventType.roomInstall);
       expect((await events.next).type, FarmEventType.deviceInstall);
+      expect((await events.next).type, FarmEventType.roomInstall);
+      expect((await events.next).type, FarmEventType.roomUpdate);
+      expect((await events.next).type, FarmEventType.deviceUpdate);
 
       // install component
       FarmEvent event = await events.next;
