@@ -87,4 +87,12 @@ class Device {
     farm.publish("homie/$id/\$implementation/config/set",
         jsonEncode({"settings": settings}));
   }
+
+  void reboot() {
+    sendSettings({});
+  }
+
+  void forget() {
+    farm.publish("florafi/device/$id", "", retain: true);
+  }
 }
