@@ -2,23 +2,21 @@ import '../daytime.g.dart';
 import 'datetime.ext.dart';
 
 extension DayTimeExtension on Daytime {
-  DateTime get now => DateTime.now().toUtc();
-
   bool get isConfigured => startHour != null && duration != null;
 
   Duration? get dayDuration =>
       duration == null ? null : Duration(minutes: duration!);
 
-  Duration? get nightDuration => duration == null
+  Duration? get nightDuration => dayDuration == null
       ? null
-      : Duration(minutes: 1440 - dayDuration!.inMinutes);
+      : Duration(seconds: Duration.secondsPerDay - dayDuration!.inSeconds);
 
   DateTime? get dayStart {
     final _startHour = startHour;
     final _isDaytime = isDaytime;
     if (_startHour == null || _isDaytime == null) return null;
 
-    final now = DateTime.now().toUtc();
+    final now = room.currentTime;
     var time = now.startOfDay().add(Duration(hours: _startHour));
 
     if (_isDaytime && time.isAfter(now)) {
@@ -36,10 +34,9 @@ extension DayTimeExtension on Daytime {
       return null;
     }
 
-    final now = DateTime.now().toUtc();
     var time = _dayStart.startOfHour().add(_dayDuration);
 
-    if (!_isDaytime && time.isAfter(now)) {
+    if (!_isDaytime && time.isAfter(room.currentTime)) {
       time = time.subtract(const Duration(days: 1));
     }
 
@@ -48,12 +45,12 @@ extension DayTimeExtension on Daytime {
 
   Duration? get dayElapsed {
     final start = dayStart;
-    return start == null ? null : now.difference(start);
+    return start == null ? null : room.currentTime.difference(start);
   }
 
   Duration? get nightElapsed {
     final start = nightStart;
-    return start == null ? null : now.difference(start);
+    return start == null ? null : room.currentTime.difference(start);
   }
 
   Duration? get dayRemaining {
@@ -93,7 +90,4 @@ extension DayTimeExtension on Daytime {
   Duration? get phaseRemaining =>
       isDaytime == true ? dayRemaining : nightRemaining;
   double? get phaseProgress => isDaytime == true ? dayProgress : nightProgress;
-
-  // double get nightProgress => nightElapsed.inSeconds / nightDuration.inSeconds;
-
 }
