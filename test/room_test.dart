@@ -124,14 +124,14 @@ void main() {
       expect(mustThrow, throwsA(isA<UnknownComponentError>()));
     });
 
-    test('returns true when component existed.', () {
+    test('returns removed component when component existed.', () {
       room.getComponent("daytime");
-      expect(room.removeComponent('daytime'), true);
+      expect(room.removeComponent('daytime'), isA<Daytime>());
       expect(room.daytime, null);
     });
 
-    test("returns false when component did't exist.", () {
-      expect(room.removeComponent('daytime'), false);
+    test("returns null when component did't exist.", () {
+      expect(room.removeComponent('daytime'), null);
     });
   });
 
@@ -155,6 +155,21 @@ void main() {
 
     test("returns false when component dont exist.", () {
       expect(room.hasComponent('daytime'), false);
+    });
+  });
+
+  group("Room.isDaytime", () {
+    late Farm farm;
+    late Room room;
+
+    setUp(() {
+      farm = Farm();
+      farm.processMessage(FarmMessage(r'florafi/room/r1/$name', 'r1'));
+      room = farm.rooms["r1"]!;
+    });
+
+    test('returns null if missing daytime config', () {
+      expect(room.hasComponent('unkownComponent'), null);
     });
   });
 }

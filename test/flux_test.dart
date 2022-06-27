@@ -14,7 +14,7 @@ void main() {
 
     test('handles multiple tables/schemas', () async {
       final series = await parseFluxSeries(
-          stream: lines, keyColumns: ["room", "_measurement", "farm"]);
+          stream: lines, keyColumns: ["_field", "_measurement", "farm"]);
       expect(series.length, 4);
       expect(series[0].key, 'room0.humidity.2');
       expect(series[1].key, 'room1.light.2');
