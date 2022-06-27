@@ -30,7 +30,7 @@ class MqttCommunicator extends Communicator {
     this.username = username;
     this.password = password;
     clientId = clientIdentifier ??
-        "florafi_dart_+" + Random().nextInt(1 << 32).toString();
+        "florafi_dart_" + Random().nextInt(1 << 32).toString();
 
     final client = mqtt = MqttServerClient.withPort(server, clientId, port);
     client.setProtocolV311();
