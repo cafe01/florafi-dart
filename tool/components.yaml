@@ -88,7 +88,7 @@ components:
     init_vars:
       name: Sensor de luminosidade
       measurementId: light
-      measurementName: Iluminação
+      measurementName: Luminosidade
       measurementUnit: "%"
       measurementProperty: intensity
     ro:
