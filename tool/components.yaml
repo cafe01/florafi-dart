@@ -50,6 +50,37 @@ components:
         type: int
         accessorAliasOverride: goodUpperBound
 
+  phmeter:
+    import:
+      - component.dart
+    extends: Sensor
+    init_vars:
+      name: Medidor de pH
+      measurementId: ph
+      measurementName: pH
+      measurementUnit: ""
+      measurementProperty: current_value
+    ro:
+      - name: current_value
+        type: double
+        accessorAliasOverride: measurement
+
+      - name: last_calibration_time
+        type: int
+    
+    rw:
+      - name: low_ph_warning_limit
+        type: double
+        accessorAliasOverride: goodLowerBound
+
+      - name: high_ph_warning_limit
+        type: double
+        accessorAliasOverride: goodUpperBound
+
+      - name: sensor_calibration_interval
+        type: int
+  
+
   light_sensor:
     import:
       - component/light_sensor_base.dart
@@ -69,7 +100,6 @@ components:
       - name: min_intensity_day_alert
         type: int
         accessorAliasOverride: goodLowerBound
-
 
       - name: max_intensity_night_alert
         type: int

@@ -1,3 +1,4 @@
+import 'component/extension/datetime.ext.dart';
 import 'alert.dart';
 import 'component/components.dart';
 import 'device.dart';
@@ -70,6 +71,7 @@ class Room {
   LightSensor? lightSensor;
   Lighting? lighting;
   Thermometer? thermometer;
+  Phmeter? phmeter;
 
   bool? hasComponent(String componentId) {
     switch (componentId) {
@@ -97,6 +99,8 @@ class Room {
         return lighting != null;
       case "temperature":
         return thermometer != null;
+      case "ph-meter":
+        return phmeter != null;
       default:
         return null;
     }
@@ -128,12 +132,14 @@ class Room {
         return lighting ??= Lighting(room: this);
       case "temperature":
         return thermometer ??= Thermometer(room: this);
+      case "ph-meter":
+        return phmeter ??= Phmeter(room: this);
       default:
         throw UnknownComponentError(componentId);
     }
   }
 
-  bool removeComponent(String componentId) {
+  Component? removeComponent(String componentId) {
     late final Component? component;
     switch (componentId) {
       case "daytime":
@@ -184,10 +190,46 @@ class Room {
         component = thermometer;
         thermometer = null;
         break;
+      case "ph-meter":
+        component = phmeter;
+        phmeter = null;
+        break;
       default:
         throw UnknownComponentError(componentId);
     }
 
-    return component != null;
+    return component;
+  }
+
+  // daytime
+  DateTime get currentTime => farm.clock.now().toUtc();
+
+  bool get hasPhotoperiodConfig =>
+      daytime?.startHour != null &&
+      daytime?.startDelay != null &&
+      daytime?.duration != null;
+
+  bool? get isDaytime {
+    // missing daytime configuration
+    if (!hasPhotoperiodConfig) return null;
+
+    final startHour = daytime!.startHour!;
+    final startdelay = daytime!.startDelay!;
+    final durationSeconds = daytime!.duration! * 60;
+
+    // calculate
+    final startSecond = Duration.secondsPerHour * startHour + startdelay;
+
+    int endSecond = startSecond + durationSeconds;
+    if (endSecond > Duration.secondsPerDay) {
+      endSecond -= Duration.secondsPerDay;
+    }
+
+    final now = currentTime;
+    final currentSecond = now.difference(now.startOfDay()).inSeconds;
+
+    return endSecond >= startSecond
+        ? currentSecond >= startSecond && currentSecond < endSecond
+        : currentSecond >= startSecond || currentSecond < endSecond;
   }
 }

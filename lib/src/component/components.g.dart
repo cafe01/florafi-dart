@@ -1,5 +1,6 @@
 export 'thermometer.g.dart';
 export 'hygrometer.g.dart';
+export 'phmeter.g.dart';
 export 'light_sensor.g.dart';
 export 'daytime.g.dart';
 export 'ebbflow.g.dart';
