@@ -50,6 +50,31 @@ components:
         type: int
         accessorAliasOverride: goodUpperBound
 
+
+  vpd_meter:
+    import:
+      - component.dart
+    extends: Sensor
+    init_vars:
+      name: Medidor VPD
+      measurementId: vpd
+      measurementName: VPD
+      measurementUnit: pa
+    ro:
+      - name: measurement
+        type: int
+        override: true
+    rw:
+      - name: good_lower_bound
+        type: int
+        setter_type: num
+        override: true
+
+      - name: good_upper_bound
+        type: int
+        setter_type: num
+        override: true
+
   phmeter:
     import:
       - component.dart
@@ -282,3 +307,17 @@ components:
     extends: ThresholdRelay
     init_vars:
       name: Desumidificador
+
+  humidifier_vpd:
+    import:
+      - component/threshold_relay.g.dart
+    extends: ThresholdRelay
+    init_vars:
+      name: Umidificador VPD
+
+  dehumidifier_vpd:
+    import:
+      - component/threshold_relay.g.dart
+    extends: ThresholdRelay
+    init_vars:
+      name: Desumidificador VPD

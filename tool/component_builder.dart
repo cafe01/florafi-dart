@@ -183,6 +183,10 @@ List<String> buildGetter(YamlMap prop) {
   String type = prop["type"];
   String name = prop["name"];
   String accessor = name.toCamelCase();
+  if (prop.containsKey("override")) {
+    result.add('@override ');
+  }
+
   result.add('$type? get $accessor => getProperty("$name") as $type?;');
   if (prop.containsKey("accessorAliasOverride")) {
     result.add(
@@ -193,9 +197,14 @@ List<String> buildGetter(YamlMap prop) {
 
 List<String> buildSetter(YamlMap prop) {
   final result = <String>[];
-  String type = prop["type"];
+  String type = prop["setter_type"] ?? prop["type"];
   String name = prop["name"];
+
   String accessor = name.toCamelCase();
+  if (prop.containsKey("override")) {
+    result.add('@override ');
+  }
+
   result.add('set $accessor($type? value) => setControl("$name", value);');
   if (prop.containsKey("accessorAliasOverride")) {
     result.add(

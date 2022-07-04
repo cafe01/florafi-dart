@@ -115,7 +115,7 @@ abstract class Sensor extends Component {
   String get measurementId;
   String get measurementName;
   String get measurementUnit => "";
-  String get measurementProperty;
+  String get measurementProperty => "measurement";
   num? get measurement;
   num? get goodUpperBound;
   num? get goodLowerBound;

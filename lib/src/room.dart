@@ -54,6 +54,10 @@ class Room {
       if (thermometer != null) thermometer!,
       if (hygrometer != null) hygrometer!,
       if (lightSensor != null) lightSensor!,
+      if (phmeter != null) phmeter!,
+      if (vpdmeter != null) vpdmeter!,
+      if (humidifierVpd != null) humidifierVpd!,
+      if (dehumidifierVpd != null) dehumidifierVpd!,
     ];
     // if (daytime != null) list.add(daytime!);
     return list;
@@ -72,6 +76,9 @@ class Room {
   Lighting? lighting;
   Thermometer? thermometer;
   Phmeter? phmeter;
+  VpdMeter? vpdmeter;
+  HumidifierVpd? humidifierVpd;
+  DehumidifierVpd? dehumidifierVpd;
 
   bool? hasComponent(String componentId) {
     switch (componentId) {
@@ -101,6 +108,12 @@ class Room {
         return thermometer != null;
       case "ph-meter":
         return phmeter != null;
+      case "vpd-meter":
+        return vpdmeter != null;
+      case "humidifier-vpd":
+        return humidifierVpd != null;
+      case "dehumidifier-vpd":
+        return dehumidifierVpd != null;
       default:
         return null;
     }
@@ -134,6 +147,12 @@ class Room {
         return thermometer ??= Thermometer(room: this);
       case "ph-meter":
         return phmeter ??= Phmeter(room: this);
+      case "vpd-meter":
+        return vpdmeter ??= VpdMeter(room: this);
+      case "humidifier-vpd":
+        return humidifierVpd ??= HumidifierVpd(room: this);
+      case "dehumidifier-vpd":
+        return dehumidifierVpd ??= DehumidifierVpd(room: this);
       default:
         throw UnknownComponentError(componentId);
     }
@@ -193,6 +212,18 @@ class Room {
       case "ph-meter":
         component = phmeter;
         phmeter = null;
+        break;
+      case "vpd-meter":
+        component = vpdmeter;
+        vpdmeter = null;
+        break;
+      case "humidifier-vpd":
+        component = humidifierVpd;
+        humidifierVpd = null;
+        break;
+      case "dehumidifier-vpd":
+        component = dehumidifierVpd;
+        dehumidifierVpd = null;
         break;
       default:
         throw UnknownComponentError(componentId);
