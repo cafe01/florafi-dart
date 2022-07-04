@@ -1,3 +1,8 @@
+## 0.4.0
+- added VpdMeter
+- added HumidifierVpd
+- added DehumidifierVpd
+
 ## 0.3.0
 - improved component to device binding
 - improved DayTimeExtension
