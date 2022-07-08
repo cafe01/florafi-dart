@@ -12,7 +12,7 @@ components:
       name: Termômetro
       measurementId: temperature
       measurementName: Temperatura
-      measurementUnit: "º"
+      measurementUnit: "ºC"
       measurementProperty: last_value
     ro:
       - name: last_value
@@ -60,6 +60,30 @@ components:
       measurementId: vpd
       measurementName: VPD
       measurementUnit: pa
+    ro:
+      - name: measurement
+        type: int
+        override: true
+    rw:
+      - name: good_lower_bound
+        type: int
+        setter_type: num
+        override: true
+
+      - name: good_upper_bound
+        type: int
+        setter_type: num
+        override: true
+
+  co2_meter:
+    import:
+      - component.dart
+    extends: Sensor
+    init_vars:
+      name: Medidor de CO2
+      measurementId: co2
+      measurementName: Nível de CO2
+      measurementUnit: ppm
     ro:
       - name: measurement
         type: int
@@ -321,3 +345,10 @@ components:
     extends: ThresholdRelay
     init_vars:
       name: Desumidificador VPD
+
+  co2_emitter:
+    import:
+      - component/threshold_relay.g.dart
+    extends: ThresholdRelay
+    init_vars:
+      name: Emissor de CO2
