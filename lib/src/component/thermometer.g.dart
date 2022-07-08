@@ -14,7 +14,7 @@ class Thermometer extends Sensor {
   @override
   final measurementName = "Temperatura";
   @override
-  final measurementUnit = "º";
+  final measurementUnit = "ºC";
   @override
   final measurementProperty = "last_value";
   Thermometer({required Room room})
