@@ -129,6 +129,41 @@ components:
       - name: sensor_calibration_interval
         type: int
   
+  reservoir_meter:
+    import:
+      - component.dart
+    extends: Sensor
+    init_vars:
+      name: Medidor de reservatório
+      measurementId: reservoirLevel
+      measurementName: Nível do reservatório
+      measurementUnit: "%"
+      measurementProperty: level_percent
+    ro:
+      - name: level_percent
+        type: int
+        accessorAliasOverride: measurement
+
+      - name: distance_cm
+        type: int
+
+    rw:
+      - name: low_alert_limit
+        type: int
+        accessorAliasOverride: goodLowerBound
+
+      - name: overflow_alert_limit
+        type: int
+        accessorAliasOverride: goodUpperBound
+
+      - name: maintenance_action
+        type: int
+
+      - name: empty_distance_cm
+        type: int
+
+      - name: full_distance_cm
+        type: int
 
   light_sensor:
     import:
@@ -294,6 +329,20 @@ components:
     extends: Relay
     init_vars:
       name: Ebbflow drain
+
+  reservoir_fill:
+    import:
+      - component/relay.g.dart
+    extends: Relay
+    init_vars:
+      name: Entrada do reservatório
+
+  reservoir_drain:
+    import:
+      - component/relay.g.dart
+    extends: Relay
+    init_vars:
+      name: Dreno do reservatório
 
   lighting:
     import:

@@ -44,20 +44,27 @@ class Room {
     List<Component> list = [
       if (daytime != null) daytime!,
       if (ebbflow != null) ebbflow!,
+      // sensors
+      if (lightSensor != null) lightSensor!,
+      if (thermometer != null) thermometer!,
+      if (hygrometer != null) hygrometer!,
+      if (vpdmeter != null) vpdmeter!,
+      if (co2meter != null) co2meter!,
+      if (phmeter != null) phmeter!,
+      if (reservoirMeter != null) reservoirMeter!,
+      // relays
       if (ebbflowFlood != null) ebbflowFlood!,
       if (ebbflowDrain != null) ebbflowDrain!,
       if (lighting != null) lighting!,
       if (intervalIrrigation != null) intervalIrrigation!,
       if (exaust != null) exaust!,
-      if (dehumidifier != null) dehumidifier!,
       if (humidifier != null) humidifier!,
-      if (thermometer != null) thermometer!,
-      if (hygrometer != null) hygrometer!,
-      if (lightSensor != null) lightSensor!,
-      if (phmeter != null) phmeter!,
-      if (vpdmeter != null) vpdmeter!,
       if (humidifierVpd != null) humidifierVpd!,
+      if (dehumidifier != null) dehumidifier!,
       if (dehumidifierVpd != null) dehumidifierVpd!,
+      if (co2emitter != null) co2emitter!,
+      if (reservoirFill != null) reservoirFill!,
+      if (reservoirDrain != null) reservoirDrain!,
     ];
     // if (daytime != null) list.add(daytime!);
     return list;
@@ -77,8 +84,13 @@ class Room {
   Thermometer? thermometer;
   Phmeter? phmeter;
   VpdMeter? vpdmeter;
+  Co2Meter? co2meter;
   HumidifierVpd? humidifierVpd;
   DehumidifierVpd? dehumidifierVpd;
+  Co2Emitter? co2emitter;
+  ReservoirMeter? reservoirMeter;
+  ReservoirFill? reservoirFill;
+  ReservoirDrain? reservoirDrain;
 
   bool? hasComponent(String componentId) {
     switch (componentId) {
@@ -114,6 +126,17 @@ class Room {
         return humidifierVpd != null;
       case "dehumidifier-vpd":
         return dehumidifierVpd != null;
+      case "co2-meter":
+        return co2meter != null;
+      case "co2-emitter":
+        return co2emitter != null;
+      case "netuno":
+      case "reservoir":
+        return reservoirMeter != null;
+      case "reservoir-fill-relay":
+        return reservoirFill != null;
+      case "reservoir-drain-relay":
+        return reservoirDrain != null;
       default:
         return null;
     }
@@ -153,6 +176,17 @@ class Room {
         return humidifierVpd ??= HumidifierVpd(room: this);
       case "dehumidifier-vpd":
         return dehumidifierVpd ??= DehumidifierVpd(room: this);
+      case "co2-meter":
+        return co2meter ??= Co2Meter(room: this);
+      case "co2-emitter":
+        return co2emitter ??= Co2Emitter(room: this);
+      case "netuno":
+      case "reservoir":
+        return reservoirMeter ??= ReservoirMeter(room: this);
+      case "reservoir-fill-relay":
+        return reservoirFill ??= ReservoirFill(room: this);
+      case "reservoir-drain-relay":
+        return reservoirDrain ??= ReservoirDrain(room: this);
       default:
         throw UnknownComponentError(componentId);
     }
@@ -224,6 +258,27 @@ class Room {
       case "dehumidifier-vpd":
         component = dehumidifierVpd;
         dehumidifierVpd = null;
+        break;
+      case "co2-meter":
+        component = co2meter;
+        co2meter = null;
+        break;
+      case "co2-emitter":
+        component = co2emitter;
+        co2emitter = null;
+        break;
+      case "netuno":
+      case "reservoir":
+        component = reservoirMeter;
+        reservoirMeter = null;
+        break;
+      case "reservoir-fill-relay":
+        component = reservoirFill;
+        reservoirFill = null;
+        break;
+      case "reservoir-drain-relay":
+        component = reservoirDrain;
+        reservoirDrain = null;
         break;
       default:
         throw UnknownComponentError(componentId);
