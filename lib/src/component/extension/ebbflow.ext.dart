@@ -146,8 +146,24 @@ extension EbbflowExtension on Ebbflow {
 
   // progrss
   double? get currentPhaseProgress {
-    final elapsed = currentPhaseElapsed;
-    final duration = currentPhaseDuration;
+    Duration? elapsed;
+    Duration? duration;
+
+    if (phase == 1) {
+      elapsed = lastFloodElapsed;
+      duration = intervalDuration;
+    } else if (phase == 4) {
+      elapsed = lastFullElapsed;
+      duration = maxFullDuration;
+    }
+
+    if (elapsed == null || duration == null) return null;
+    return elapsed.inSeconds / duration.inSeconds;
+  }
+
+  double? get intervalProgress {
+    final elapsed = lastFloodElapsed;
+    final duration = intervalDuration;
     if (elapsed == null || duration == null) return null;
     return elapsed.inSeconds / duration.inSeconds;
   }

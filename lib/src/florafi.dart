@@ -13,15 +13,26 @@ typedef OnFarmCallback = void Function(Farm);
 final _log = Logger("Florafi");
 
 class Florafi {
-  Farm joinFarm(FarmTicket ticket) {
+  Farm joinFarm(FarmTicket ticket,
+      {bool browserClient = false, bool secure = true}) {
     final communicator = MqttCommunicator(
-        server: ticket.host,
-        port: ticket.tlsPort,
-        username: ticket.username,
-        password: ticket.password);
+      server: ticket.host,
+      secure: secure,
+      port: browserClient
+          ? ticket.wssPort
+          : secure
+              ? ticket.tlsPort
+              : ticket.port,
+      username: ticket.username,
+      password: ticket.password,
+    );
 
     final farm = Farm(
-        name: ticket.farmName, id: ticket.farmId, communicator: communicator);
+      name: ticket.farmName,
+      id: ticket.farmId,
+      communicator: communicator,
+      isReadOnly: ticket.isReadOnly,
+    );
 
     return farm;
   }

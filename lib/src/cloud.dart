@@ -1,7 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:florafi/src/cloud/farm_join_token_record.dart';
 import 'package:http/http.dart' as http;
+import 'dart:io' as io;
 import 'package:logging/logging.dart';
+
+import '../florafi.dart';
+
+import 'cloud/user_record.dart';
+import 'cloud/room_record.dart';
 
 final _log = Logger("FloraCloud");
 
@@ -34,9 +41,23 @@ class FarmTicket {
   final int wssPort;
   final String username;
   final String password;
+  final bool isReadOnly;
+  final bool isAdmin;
+  final String? joinSecret;
 
-  FarmTicket(this.farmId, this.farmName, this.host, this.port, this.tlsPort,
-      this.wssPort, this.username, this.password);
+  FarmTicket(
+    this.farmId,
+    this.farmName,
+    this.host,
+    this.port,
+    this.tlsPort,
+    this.wssPort,
+    this.username,
+    this.password,
+    this.isReadOnly,
+    this.isAdmin,
+    this.joinSecret,
+  );
 
   factory FarmTicket.fromJson(Map<String, dynamic> data) {
     return FarmTicket(
@@ -48,6 +69,9 @@ class FarmTicket {
       data['wssPort'] as int? ?? 0,
       data['username'] as String? ?? "",
       data['password'] as String? ?? "",
+      data['isReadOnly'] as bool? ?? false,
+      data['isAdmin'] as bool? ?? false,
+      data['joinSecret'] as String?,
     );
   }
 }
@@ -87,8 +111,36 @@ class AccessToken {
   bool get isExpired => remainingTime <= invalidthreshold;
 }
 
+class QueryFilter {
+  QueryFilter({this.where, this.limit, this.skip, this.order, this.include});
+
+  final Map<String, dynamic>? where;
+  final int? limit;
+  final int? skip;
+  final List<String>? order;
+  final List<String>? include;
+
+  String toJson() {
+    Map<String, dynamic> json = {
+      "where": where,
+      "include": include,
+      "order": order,
+      "limit": limit,
+      "skip": skip,
+    };
+
+    json.removeWhere((key, value) => value == null);
+    return jsonEncode(json);
+  }
+
+  String toString() {
+    return "QueryFilter(${toJson()})";
+  }
+}
+
 class FloraCloud {
-  FloraCloud({String apiUrl = "https://api.florafi.net"}) {
+  FloraCloud({String? apiUrl}) {
+    apiUrl ??= "https://api.florafi.net";
     baseUrl = Uri.parse(apiUrl);
   }
 
@@ -96,8 +148,9 @@ class FloraCloud {
   final apiHost = "api.florafi.net";
 
   AccessToken? accessToken;
-
   String? refreshToken;
+
+  bool get hasCredential => (accessToken ?? refreshToken) != null;
 
   Uri _buildUrl(String path, {Map<String, dynamic>? queryParameters}) {
     final pathSegments = baseUrl.pathSegments.toList();
@@ -137,6 +190,7 @@ class FloraCloud {
   Future<http.Response> request(
     http.Request request, {
     authenticated = true,
+    timeout = const Duration(seconds: 10),
   }) async {
     // authenticated request
     if (authenticated) {
@@ -149,7 +203,8 @@ class FloraCloud {
 
         // try again
         await _refreshAccessToken();
-        return this.request(request, authenticated: authenticated);
+        return this
+            .request(request, authenticated: authenticated, timeout: timeout);
       }
 
       request.headers["Authorization"] = "Bearer ${accessToken!.token}";
@@ -158,11 +213,17 @@ class FloraCloud {
     // send request
     _log.fine(request.toString());
     _log.finer(request.headers.toString());
-    _log.finest(request.body);
+
+    if (request.method != "GET") _log.finest(request.body);
     var client = http.Client();
     late http.Response res;
+
     try {
-      res = await http.Response.fromStream(await client.send(request));
+      final streamRes = await client.send(request).timeout(timeout);
+      res = await http.Response.fromStream(streamRes);
+      _log.finer("Response: (${res.contentLength} bytes)");
+      _log.finer(res.headers);
+      _log.finer(utf8.decode(res.bodyBytes));
     } finally {
       client.close();
     }
@@ -192,9 +253,14 @@ class FloraCloud {
   }
 
   Future<http.Response> get(String path,
-      {Map<String, dynamic>? queryParameters,
-      authenticated = true,
+      {authenticated = true,
+      Map<String, dynamic>? queryParameters,
+      QueryFilter? filter,
       Map<String, String>? headers}) {
+    if (filter != null) {
+      queryParameters ??= {};
+      queryParameters["filter"] = filter.toJson();
+    }
     // request
     final url = _buildUrl(path, queryParameters: queryParameters);
     final request = http.Request("GET", url);
@@ -215,8 +281,31 @@ class FloraCloud {
 
     // json body
     if (json != null) {
-      request.body = jsonEncode(json);
+      request.encoding = Utf8Codec();
       request.headers["content-type"] = "application/json";
+      request.body = jsonEncode(json);
+    }
+
+    // request
+    return this.request(request, authenticated: authenticated);
+  }
+
+  Future<http.Response> patch(String path,
+      {authenticated = true,
+      Map<String, dynamic>? json,
+      Map<String, dynamic>? queryParameters,
+      Map<String, String>? headers}) {
+    // build request
+
+    final url = _buildUrl(path, queryParameters: queryParameters);
+    final request = http.Request("PATCH", url);
+    if (headers != null) request.headers.addAll(headers);
+
+    // json body
+    if (json != null) {
+      request.encoding = Utf8Codec();
+      request.headers["content-type"] = "application/json";
+      request.body = jsonEncode(json);
     }
 
     // request
@@ -235,8 +324,14 @@ class FloraCloud {
   Future<bool> signUp(
       {required String name,
       required String email,
-      required String password}) async {
-    final json = {"name": name, "email": email, "password": password};
+      required String password,
+      remember = false}) async {
+    final json = {
+      "name": name,
+      "email": email,
+      "password": password,
+      "remember": remember
+    };
     final res = await post("/users/sign-up", json: json, authenticated: false);
     final decodedResponse = jsonDecode(res.body);
 
@@ -263,9 +358,15 @@ class FloraCloud {
     refreshToken = data["refreshToken"] as String?;
   }
 
+  void signOut() {
+    accessToken = null;
+    refreshToken = null;
+  }
+
   Future<List<FarmTicket>> checkIn() async {
     final res = await get("users/check-in");
-    final data = jsonDecode(res.body);
+    final body = utf8.decode(res.bodyBytes);
+    final data = jsonDecode(body);
 
     List<FarmTicket> tickets = [];
     for (final ticketData in data) {
@@ -273,13 +374,6 @@ class FloraCloud {
     }
 
     return tickets;
-  }
-
-  // high-level user request
-  Future<void> saveFcmToken(
-      {required String token, required String userAgent}) async {
-    final json = {"token": token, "userAgent": userAgent};
-    await post("/users/fcm-token", json: json);
   }
 
   // high-level farm request
@@ -292,5 +386,93 @@ class FloraCloud {
     final res =
         await post("farms/$farmId/flux_query", json: json, headers: headers);
     return res.body;
+  }
+
+  Future<List<RoomRecord>> getFarmRooms({required int farmId}) async {
+    final res = await get("farms/$farmId/rooms");
+    final body = utf8.decode(res.bodyBytes);
+    final jsonList = jsonDecode(body);
+    assert(jsonList is List);
+
+    List<RoomRecord> rooms = [];
+
+    for (final item in jsonList) {
+      rooms.add(RoomRecord.fromJson(item));
+    }
+
+    return rooms;
+  }
+
+  Future<RoomRecord> createFarmRoom(
+      {required int farmId, required String name}) async {
+    final res = await post("farms/$farmId/rooms", json: {"name": name});
+    final json = jsonDecode(res.body);
+    return RoomRecord.fromJson(json);
+  }
+
+  Future<void> renameFarm({required int farmId, required String name}) async {
+    await patch("farms/$farmId", json: {"name": name});
+  }
+
+  Future<void> renameFarmRoom(
+      {required int farmId, required int roomId, required String name}) async {
+    await patch("farms/$farmId/rooms/$roomId", json: {"name": name});
+  }
+
+  Future<void> setDeviceRoom(Device device, int roomId) async {
+    await patch("/farms/${device.farm.id}/devices/${device.hardwareId}",
+        json: {"roomId": roomId});
+  }
+
+  Future<FarmJoinTokenRecord> createFarmJoinToken(
+      {required int farmId, int? userId, readOnly = false}) async {
+    Map<String, dynamic> params = {"readOnly": readOnly};
+    if (userId != null) params["userId"] = userId.toInt();
+
+    final res = await post("farms/$farmId/join-token", json: params);
+
+    final json = jsonDecode(res.body);
+    return FarmJoinTokenRecord.fromJson(json);
+  }
+
+  Future<FarmJoinTokenRecord> resolveFarmJoinToken(
+      {required String jwtToken}) async {
+    final res =
+        await post("farms/resolve-join-token", json: {"token": jwtToken});
+    final json = jsonDecode(res.body);
+    return FarmJoinTokenRecord.fromJson(json);
+  }
+
+  Future<FarmTicket> acceptFarmJoinToken({required String jwtToken}) async {
+    final res =
+        await post("farms/accept-join-token", json: {"token": jwtToken});
+    final json = jsonDecode(res.body);
+    return FarmTicket.fromJson(json);
+  }
+
+  /// User endpoints
+  Future<void> saveFcmToken(
+      {required String token, required String userAgent}) async {
+    final json = {"token": token, "userAgent": userAgent};
+    await post("/users/fcm-token", json: json);
+  }
+
+  Future<List<UserRecord>> findUsers(
+      {required String query, limit = 20, page = 1}) async {
+    final res = await get("users", queryParameters: {
+      "query": query,
+      "limit": limit.toString(),
+      "page": page.toString(),
+    });
+
+    final jsonList = jsonDecode(res.body);
+
+    List<UserRecord> users = [];
+
+    for (final item in jsonList) {
+      users.add(UserRecord.fromJson(item));
+    }
+
+    return users;
   }
 }

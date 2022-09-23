@@ -11,6 +11,7 @@ enum FarmEventType {
   deviceUpdate,
   deviceState,
   deviceStatus,
+  deviceOtaStatus,
   deviceLoaded,
   deviceUninstall,
 

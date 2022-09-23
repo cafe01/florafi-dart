@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'farm.dart' show FarmMessage;
 
@@ -28,7 +29,7 @@ abstract class Communicator {
   // TODO make callbacks a list
 
   /// Client disconnect callback, called on unsolicited disconnect.
-  /// This will not be called even if set if [autoReconnect} is set,instead
+  /// This will not be called even if set if [autoConnect} is set,instead
   /// [onAutoReconnect] will be called.
   Callback? onDisconnected;
 
@@ -54,6 +55,9 @@ abstract class Communicator {
   bool get isDisconnecting => false;
 
   int publish(String topic, String data,
+      {CommunicatorQos qos = CommunicatorQos.atLeastOnce, bool retain = false});
+
+  int publishBinary(String topic, Uint8List data,
       {CommunicatorQos qos = CommunicatorQos.atLeastOnce, bool retain = false});
 
   int? subscribe(String topic, CommunicatorQos qos);

@@ -26,7 +26,7 @@ class Room {
   String get label => name ?? id;
 
   rename(String name) {
-    farm.publish("florafi/room/$id/\$name", name);
+    farm.publish("florafi/room/$id/\$name", name, retain: true);
   }
 
   LogLine? lastLog;
@@ -65,6 +65,7 @@ class Room {
       if (co2emitter != null) co2emitter!,
       if (reservoirFill != null) reservoirFill!,
       if (reservoirDrain != null) reservoirDrain!,
+      if (airConditioner != null) airConditioner!,
     ];
     // if (daytime != null) list.add(daytime!);
     return list;
@@ -91,6 +92,7 @@ class Room {
   ReservoirMeter? reservoirMeter;
   ReservoirFill? reservoirFill;
   ReservoirDrain? reservoirDrain;
+  AirConditioner? airConditioner;
 
   bool? hasComponent(String componentId) {
     switch (componentId) {
@@ -137,6 +139,8 @@ class Room {
         return reservoirFill != null;
       case "reservoir-drain-relay":
         return reservoirDrain != null;
+      case "air-conditioner-relay":
+        return airConditioner != null;
       default:
         return null;
     }
@@ -187,6 +191,8 @@ class Room {
         return reservoirFill ??= ReservoirFill(room: this);
       case "reservoir-drain-relay":
         return reservoirDrain ??= ReservoirDrain(room: this);
+      case "air-conditioner-relay":
+        return airConditioner ??= AirConditioner(room: this);
       default:
         throw UnknownComponentError(componentId);
     }
@@ -279,6 +285,10 @@ class Room {
       case "reservoir-drain-relay":
         component = reservoirDrain;
         reservoirDrain = null;
+        break;
+      case "air-conditioner-relay":
+        component = airConditioner;
+        airConditioner = null;
         break;
       default:
         throw UnknownComponentError(componentId);

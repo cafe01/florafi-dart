@@ -2,13 +2,18 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'dart:convert' show utf8;
+import 'dart:typed_data';
 
 import 'package:florafi/florafi.dart';
 import 'package:logging/logging.dart';
 import 'package:mqtt_client/mqtt_client.dart';
-import 'package:mqtt_client/mqtt_server_client.dart';
+import 'mqtt/server_client.dart'
+    if (dart.library.html) 'mqtt/browser_client.dart' as mqttsetup;
+import 'package:typed_data/typed_data.dart';
 
 final _log = Logger('MqttCommunicator');
+
+final _maxIntId = pow(2, 32).toInt();
 
 class MqttCommunicator extends Communicator {
   late final MqttClient mqtt;
@@ -30,13 +35,13 @@ class MqttCommunicator extends Communicator {
     this.username = username;
     this.password = password;
     clientId = clientIdentifier ??
-        "florafi_dart_" + Random().nextInt(1 << 32).toString();
+        "florafi_dart_" + Random().nextInt(_maxIntId).toString();
 
-    final client = mqtt = MqttServerClient.withPort(server, clientId, port);
-    client.setProtocolV311();
-    client.secure = secure;
+    mqtt = mqttsetup.setup(
+        server: server, clientId: clientId, port: port, secure: secure);
 
-    client.autoReconnect = autoReconnect;
+    mqtt.setProtocolV311();
+    mqtt.autoReconnect = autoReconnect;
 
     messages = _messages.stream;
   }
@@ -69,10 +74,10 @@ class MqttCommunicator extends Communicator {
 
   @override
   Future<void> connect() async {
-    mqtt.onConnected = onConnected;
-    mqtt.onDisconnected = onDisconnected;
-    mqtt.onAutoReconnect = onAutoReconnect;
-    mqtt.onAutoReconnected = onAutoReconnected;
+    mqtt.onConnected ??= onConnected;
+    mqtt.onDisconnected ??= onDisconnected;
+    mqtt.onAutoReconnect ??= onAutoReconnect;
+    mqtt.onAutoReconnected ??= onAutoReconnected;
 
     _log.fine("Connecting to $server:$port");
 
@@ -89,7 +94,7 @@ class MqttCommunicator extends Communicator {
     }
 
     // stream farm messages
-    _mqttMessageSubscription =
+    _mqttMessageSubscription ??=
         mqtt.updates!.listen((List<MqttReceivedMessage<MqttMessage?>> packets) {
       for (final received in packets) {
         final msg = received.payload as MqttPublishMessage;
@@ -99,7 +104,7 @@ class MqttCommunicator extends Communicator {
         try {
           data = utf8.decode(msg.payload.message);
           _log.fine("received mqtt message on '${received.topic}': $data");
-        } on FormatException catch (e) {
+        } on FormatException {
           _log.severe(
               "Error parsing mqtt message on '${received.topic}': ${msg.payload.message}");
         }
@@ -123,6 +128,16 @@ class MqttCommunicator extends Communicator {
   }
 
   @override
+  int publishBinary(String topic, Uint8List data,
+      {CommunicatorQos qos = CommunicatorQos.atLeastOnce,
+      bool retain = false}) {
+    final dataBuffer = Uint8Buffer();
+    dataBuffer.addAll(data);
+    return mqtt.publishMessage(topic, _toMqttQos(qos), dataBuffer,
+        retain: retain);
+  }
+
+  @override
   int? subscribe(String topic, CommunicatorQos qos) {
     _log.fine("subscribing to $topic (qos = ${qos.index})");
     final subscription = mqtt.subscribe(topic, _toMqttQos(qos));
@@ -132,6 +147,7 @@ class MqttCommunicator extends Communicator {
   @override
   Future<void> disconnect() async {
     await _mqttMessageSubscription?.cancel();
+    _mqttMessageSubscription = null;
     mqtt.disconnect();
   }
 }

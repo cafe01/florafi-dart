@@ -33,6 +33,13 @@ class DeviceFirmwareInfo {
   }
 }
 
+class OtaStatus {
+  final int code;
+  final int progress;
+
+  OtaStatus({required this.code, this.progress = 0});
+}
+
 enum DeviceStatus { unknown, init, ready, disconnected, lost, sleeping, alert }
 
 class Device {
@@ -46,6 +53,9 @@ class Device {
   int uptime = -1;
 
   DeviceStatus status = DeviceStatus.unknown;
+  OtaStatus? otaStatus;
+
+  int? get hardwareId => int.tryParse(id.substring(6), radix: 16);
 
   final wifi = DeviceWifiInfo();
   final mqtt = DeviceMQTTInfo();
@@ -90,6 +100,7 @@ class Device {
 
   void reboot() {
     sendSettings({});
+    // farm.publish("homie/$id/\$implementation/reset", "true");
   }
 
   void forget() {

@@ -50,7 +50,6 @@ components:
         type: int
         accessorAliasOverride: goodUpperBound
 
-
   vpd_meter:
     import:
       - component.dart
@@ -101,8 +100,8 @@ components:
 
   phmeter:
     import:
-      - component.dart
-    extends: Sensor
+      - component/phmeter_base.dart
+    extends: PhmeterBase
     init_vars:
       name: Medidor de pH
       measurementId: ph
@@ -350,6 +349,9 @@ components:
     extends: Relay
     init_vars:
       name: Iluminação
+    rw:
+      - name: high_temperature_limit
+        type: int
 
   exaust:
     import:
@@ -394,6 +396,13 @@ components:
     extends: ThresholdRelay
     init_vars:
       name: Desumidificador VPD
+
+  air_conditioner:
+    import:
+      - component/threshold_relay.g.dart
+    extends: ThresholdRelay
+    init_vars:
+      name: Ar-condicionado
 
   co2_emitter:
     import:

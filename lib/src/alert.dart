@@ -9,10 +9,14 @@ class Alert {
 
   final String id;
   final AlertType type;
-  final int timestamp;
+  int timestamp;
   final String roomId;
 
   bool get isActive {
     return timestamp > 0;
   }
+
+  bool get isInfo => type == AlertType.info;
+  bool get isWarning => type == AlertType.warning;
+  bool get isError => type == AlertType.error;
 }

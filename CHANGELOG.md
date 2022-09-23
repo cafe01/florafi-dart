@@ -1,3 +1,10 @@
+## 0.6.0
+- added ReservoirMeter, ReservoirFill, ReservoirDrain
+## 0.5.0
+- new components: Co2Meter and Co2Emitter
+- LogLine.time now defaults to local time
+- modified Thermometer measurement unit from "º" to "ºC"
+
 ## 0.4.0
 - added VpdMeter
 - added HumidifierVpd

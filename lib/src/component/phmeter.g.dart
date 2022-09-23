@@ -2,9 +2,9 @@
 // Do NOT EDIT by hand
 
 import '../room.dart';
-import '../component.dart';
+import 'phmeter_base.dart';
 
-class Phmeter extends Sensor {
+class Phmeter extends PhmeterBase {
   @override
   final id = "phmeter";
   @override

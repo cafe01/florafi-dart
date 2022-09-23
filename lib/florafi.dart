@@ -16,3 +16,5 @@ export 'src/cloud.dart';
 export 'src/flux_utils.dart';
 export 'src/communicator.dart';
 export 'src/mqtt_communicator.dart';
+export 'src/device_setup_client.dart'
+    show DeviceSetupClient, DeviceSetupStatus, WiFiNetwork;

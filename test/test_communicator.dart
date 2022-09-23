@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:florafi/src/communicator.dart';
 
 class TestMessage {
@@ -38,5 +40,12 @@ class TestCommunicator extends Communicator {
     if (onDisconnected != null) {
       onDisconnected!();
     }
+  }
+
+  @override
+  int publishBinary(String topic, Uint8List data,
+      {CommunicatorQos qos = CommunicatorQos.atLeastOnce,
+      bool retain = false}) {
+    throw UnimplementedError();
   }
 }

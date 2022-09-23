@@ -111,7 +111,7 @@ abstract class Component {
 abstract class Sensor extends Component {
   Sensor({required Room room, Map<String, Type>? schema})
       : super(room: room, schema: {...?schema});
-  final isSensor = true;
+
   String get measurementId;
   String get measurementName;
   String get measurementUnit => "";

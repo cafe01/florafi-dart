@@ -12,6 +12,8 @@ import 'log.dart';
 import 'notification.dart';
 import 'component.dart';
 
+typedef FarmEventSubscription = StreamSubscription<FarmEvent>;
+
 class FarmMessage {
   FarmMessage(String topic, this.data, {this.retained = false}) {
     _topic = topic;
@@ -52,13 +54,27 @@ class Farm {
     return _events.stream;
   }
 
+  Stream<FarmEvent> get connectionEvents {
+    const Set<FarmEventType> events = {
+      FarmEventType.farmConnected,
+      FarmEventType.farmConnectError,
+      FarmEventType.farmDisconnected,
+      FarmEventType.farmReconnect,
+      FarmEventType.farmReconnected,
+    };
+
+    return _events.stream.where((event) => events.contains(event.type));
+  }
+
   int logListSize = 0;
   final List<LogLine> logList = [];
 
   Communicator? communicator;
 
-  final String name;
+  String name;
   final int id;
+
+  final bool isReadOnly;
 
   bool isReady = false;
   Timer? _isReadyTimer;
@@ -68,13 +84,18 @@ class Farm {
   bool get isDisconnected => communicator?.isDisconnected == true;
   bool get isDisconnecting => communicator?.isDisconnecting == true;
 
+  bool autoDiscoverRoom;
+
   FarmMessage? _lastMessage;
   Clock clock;
-  Farm(
-      {this.name = "",
-      this.id = 0,
-      this.clock = const Clock(),
-      this.communicator});
+  Farm({
+    this.name = "",
+    this.id = 0,
+    this.clock = const Clock(),
+    this.communicator,
+    this.autoDiscoverRoom = false,
+    this.isReadOnly = false,
+  });
 
   void _emit(
     FarmEventType eventType, {
@@ -126,7 +147,7 @@ class Farm {
 
     subscribe("florafi/device/#");
     for (final device in devices.values) {
-      subscribe("homie/${device.id}/#");
+      _subscribeHomieTopics(device.id);
     }
     for (final room in rooms.values) {
       subscribe("florafi/room/${room.id}/#");
@@ -136,7 +157,7 @@ class Farm {
     _handleIsReady();
   }
 
-  void _onDisconnected() {
+  void _onDisconnected() async {
     isReady = false;
     _log.info("Disconnected. ($name)");
     _emit(FarmEventType.farmDisconnected);
@@ -159,23 +180,42 @@ class Farm {
     if (communicator == null) {
       throw StateError("set communicator before calling connect()");
     }
-    communicator!.onConnected = _onConnected;
-    communicator!.onDisconnected = _onDisconnected;
-    communicator!.onAutoReconnect = _onAutoReconnect;
-    communicator!.onAutoReconnected = _onAutoReconnected;
+
+    communicator!.onConnected ??= _onConnected;
+    communicator!.onDisconnected ??= _onDisconnected;
+    communicator!.onAutoReconnect ??= _onAutoReconnect;
+    communicator!.onAutoReconnected ??= _onAutoReconnected;
+
+    // not disconnected
+    if (!isDisconnected) {
+      _log.warning("Ignoring connect(): not disconnected.");
+      return;
+    }
+    // if (isConnected) {
+    //   _log.warning("Can't connect(): already connected.");
+    //   return;
+    // }
+
+    // if (isConnecting) {
+    //   _log.warning("Can't connect(): already connecting.");
+    //   return;
+    // }
+
     try {
       await communicator!.connect();
     } on ConnectError {
       _emit(FarmEventType.farmConnectError);
     }
-    _communicatorSubscription = communicator!.messages.listen((message) {
+
+    _communicatorSubscription ??= communicator!.messages.listen((message) {
       // _log.info("msg on ${message.topic}");
       processMessage(message);
     });
   }
 
   Future<void> disconnect() async {
-    await _communicatorSubscription?.cancel();
+    // await _communicatorSubscription?.cancel();
+    // _communicatorSubscription == null;
     communicator?.disconnect();
   }
 
@@ -198,7 +238,7 @@ class Farm {
     return communicator!.subscribe(topic, qos);
   }
 
-  Room _discoverRoom(String id) {
+  Room installRoom(String id, {String? name}) {
     // return existing
     if (rooms.containsKey(id)) {
       return rooms[id]!;
@@ -206,11 +246,29 @@ class Farm {
 
     // install
     final room = rooms[id] = Room(id, farm: this);
+    room.name = name;
     _emit(FarmEventType.roomInstall, room: room);
-    if (communicator != null) {
+    if (communicator != null && isConnected) {
       subscribe("florafi/room/${room.id}/#");
     }
     return room;
+  }
+
+  void uninstallRoom(String id) {
+    final room = rooms.remove(id);
+
+    // unknown room
+    if (room == null) {
+      return;
+    }
+
+    // uninstall
+    _emit(FarmEventType.roomUninstall, room: room);
+
+    // unsubscribe
+    if (communicator != null && isConnected) {
+      // subscribe("florafi/room/${room.id}/#");
+    }
   }
 
   Device _discoverDevice(String id) {
@@ -224,16 +282,25 @@ class Farm {
 
     _emit(FarmEventType.deviceInstall, device: device);
     if (communicator != null) {
-      subscribe("homie/${device.id}/#");
+      _subscribeHomieTopics(device.id);
     }
 
     return device;
   }
 
+  void _subscribeHomieTopics(String deviceId) {
+    subscribe("homie/$deviceId/+");
+    subscribe("homie/$deviceId/\$stats/+");
+    subscribe("homie/$deviceId/\$fw/+");
+    subscribe("homie/$deviceId/\$implementation/config");
+    subscribe("homie/$deviceId/\$implementation/ota/+");
+  }
+
   void processMessage(FarmMessage message) {
     if (message.topicParts.isEmpty) {
-      throw StateError(
+      _log.severe(
           "Invalid farm message: topicParts is empty! (topic: ${message.topic})");
+      return;
     }
 
     _lastMessage = message;
@@ -328,7 +395,7 @@ class Farm {
     // discover room
     Room? room;
     if (roomId != null && roomId.isNotEmpty) {
-      room = _discoverRoom(roomId);
+      room = installRoom(roomId);
     }
 
     // emit roomUpdate
@@ -338,9 +405,12 @@ class Farm {
       device.room = room;
 
       if (previousRoom != null) {
-        _emit(FarmEventType.roomUpdate, room: previousRoom);
+        _emit(FarmEventType.roomUpdate, room: previousRoom, device: device);
       }
-      if (room != null) _emit(FarmEventType.roomUpdate, room: room);
+
+      if (room != null) {
+        _emit(FarmEventType.roomUpdate, room: room, device: device);
+      }
     }
 
     // emit deviceUpdate
@@ -364,7 +434,7 @@ class Farm {
           "Invalid room message: missing subtopic. (topic: ${msg.topic})");
     }
 
-    final room = _discoverRoom(roomId);
+    final room = installRoom(roomId);
     final subtopic = msg.shiftTopic();
 
     switch (subtopic) {
@@ -624,19 +694,26 @@ class Farm {
 
     final alertId = msg.shiftTopic();
     final timestamp = int.tryParse(msg.data) ?? 0;
-    final alert = Alert(
-        id: alertId, type: alertType, timestamp: timestamp, roomId: room.id);
 
     // process alert
-    final alertKey = "${room.id}.${alert.id}";
-    if (alert.isActive) {
-      alerts[alertKey] = alert;
-    } else {
-      alerts.remove(alertKey);
+    final alertKey = "${room.id}.$alertId";
+    Alert? alert;
+
+    if (alerts.containsKey(alertKey)) {
+      // changed
+      if (alerts[alertKey]!.timestamp != timestamp) {
+        alert = alerts[alertKey]!;
+        alert.timestamp = timestamp;
+      }
+    } else if (timestamp > 0) {
+      alert = alerts[alertKey] = Alert(
+          id: alertId, type: alertType, timestamp: timestamp, roomId: room.id);
     }
 
-    // emit
-    _emit(FarmEventType.roomAlert, room: room, alert: alert);
+    if (alert != null) {
+      if (!alert.isActive) alerts.remove(alertKey);
+      _emit(FarmEventType.roomAlert, room: room, alert: alert);
+    }
   }
 
   void _processRoomNotificationMessage(Room room, FarmMessage msg) {
@@ -698,6 +775,8 @@ class Farm {
       _processHomieStateMessage(device, msg);
     } else if (subtopics == r"$implementation/config") {
       _processHomieConfigMessage(device, msg);
+    } else if (subtopics == r"$implementation/ota/status") {
+      _processHomieOtaStatusMessage(device, msg);
     }
 
     // deviceLoaded event
@@ -732,13 +811,11 @@ class Farm {
         _log.fine("Ignored invalid device '${device.id}' state: ${msg.data}");
     }
 
-    if (!msg.retained) {
-      if (device.room != null && previousStatus != device.status) {
-        _emit(FarmEventType.roomUpdate, room: device.room);
-      }
-
-      _emit(FarmEventType.deviceStatus, device: device);
+    if (device.room != null && previousStatus != device.status) {
+      _emit(FarmEventType.roomUpdate, room: device.room);
     }
+
+    _emit(FarmEventType.deviceStatus, device: device, room: device.room);
   }
 
   void _processHomieConfigMessage(Device device, FarmMessage msg) {
@@ -776,5 +853,56 @@ class Farm {
       device.settings = Map<String, dynamic>.of(config['settings']);
     }
     if (!msg.retained) _emit(FarmEventType.deviceState, device: device);
+  }
+
+  void _processHomieOtaStatusMessage(Device device, FarmMessage msg) {
+    final parts = msg.data.split(" ");
+    if (parts.isEmpty) {
+      _log.warning("empty OTA status message for device '${device.id}'");
+      return;
+    }
+
+    // code
+    final statusCode = int.tryParse(parts.first);
+    if (statusCode == null) {
+      _log.warning("invalid OTA status code for device '${device.id}'");
+      return;
+    }
+
+    // progress
+    int progress = 0;
+
+    if (statusCode == 206) {
+      if (parts.length != 2) {
+        _log.warning("invalid OTA progress message for device '${device.id}'");
+        return;
+      }
+
+      final progressString = parts[1];
+      final progressData = progressString.split("/");
+
+      if (progressData.length != 2) {
+        _log.warning("invalid OTA progress message for device '${device.id}'");
+        return;
+      }
+
+      final receivedBytes = int.tryParse(progressData[0]);
+      final totalBytes = int.tryParse(progressData[1]);
+
+      if (receivedBytes == null || totalBytes == null) {
+        _log.warning("invalid OTA progress message for device '${device.id}'");
+        return;
+      }
+
+      progress = (receivedBytes / totalBytes * 100).round();
+    }
+
+    if (statusCode == 200) {
+      progress = 100;
+    }
+
+    // ota status object
+    device.otaStatus = OtaStatus(code: statusCode, progress: progress);
+    _emit(FarmEventType.deviceOtaStatus, room: device.room, device: device);
   }
 }
