@@ -5,8 +5,8 @@ import '../room.dart';
 import '../component.dart';
 
 abstract class Relay extends Component {
-  Relay({required Room room, Map<String, Type>? schema})
-      : super(room: room, schema: {
+  Relay({required super.room, required super.mqttId, Map<String, Type>? schema})
+      : super(schema: {
           "last_on": int,
           "last_off": int,
           "power": bool,

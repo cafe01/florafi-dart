@@ -5,6 +5,8 @@ defaults:
     - room.dart
 components:
   thermometer:
+    alias:
+      - temperature
     import:
       - component.dart
     extends: Sensor
@@ -28,6 +30,8 @@ components:
         accessorAliasOverride: goodUpperBound
   
   hygrometer:
+    alias:
+      - humidity
     import:
       - component.dart
     extends: Sensor
@@ -129,6 +133,9 @@ components:
         type: int
   
   reservoir_meter:
+    alias:
+      - netuno
+      - reservoir
     import:
       - component.dart
     extends: Sensor
@@ -165,6 +172,8 @@ components:
         type: int
 
   light_sensor:
+    alias:
+      - light
     import:
       - component/light_sensor_base.dart
     extends: LightSensorBase
@@ -316,6 +325,8 @@ components:
         type: String
 
   ebbflow_flood:
+    alias:
+      - ebbflow-flood-relay
     import:
       - component/relay.g.dart
     extends: Relay
@@ -323,6 +334,8 @@ components:
       name: Ebbflow flood
 
   ebbflow_drain:
+    alias:
+      - ebbflow-drain-relay
     import:
       - component/relay.g.dart
     extends: Relay
@@ -330,6 +343,8 @@ components:
       name: Ebbflow drain
 
   reservoir_fill:
+    alias:
+      - reservoir-fill-relay
     import:
       - component/relay.g.dart
     extends: Relay
@@ -337,6 +352,8 @@ components:
       name: Entrada do reservatório
 
   reservoir_drain:
+    alias:
+      - reservoir-drain-relay
     import:
       - component/relay.g.dart
     extends: Relay
@@ -344,6 +361,8 @@ components:
       name: Dreno do reservatório
 
   lighting:
+    alias:
+      - light-relay
     import:
       - component/relay.g.dart
     extends: Relay
@@ -354,6 +373,8 @@ components:
         type: int
 
   exaust:
+    alias:
+      - exaust-relay
     import:
       - component/relay.g.dart
     extends: Relay
@@ -370,6 +391,8 @@ components:
         type: bool
 
   humidifier:
+    alias:
+      - humidifier-relay
     import:
       - component/threshold_relay.g.dart
     extends: ThresholdRelay
@@ -377,6 +400,8 @@ components:
       name: Umidificador
 
   dehumidifier:
+    alias:
+      - dehumidifier-relay
     import:
       - component/threshold_relay.g.dart
     extends: ThresholdRelay
@@ -398,6 +423,8 @@ components:
       name: Desumidificador VPD
 
   air_conditioner:
+    alias:
+      - air-conditioner-relay
     import:
       - component/threshold_relay.g.dart
     extends: ThresholdRelay

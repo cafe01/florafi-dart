@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:logging/logging.dart';
 
 import 'device.dart';
@@ -17,7 +19,8 @@ class UnknownPropertyError implements Exception {
 }
 
 abstract class Component {
-  Component({required this.room, Map<String, Type>? schema}) {
+  Component(
+      {required this.room, required this.mqttId, Map<String, Type>? schema}) {
     if (schema != null) {
       _schema.addAll(schema);
     }
@@ -26,6 +29,7 @@ abstract class Component {
   Device? device;
   String get id;
   String get name;
+  String mqttId;
 
   Stream<FarmEvent> get events =>
       room.events.where((event) => event.component == this);
@@ -87,11 +91,12 @@ abstract class Component {
   }
 
   void setControl(String prop, Object? value) {
-    String? endpoint = _control[prop];
-    if (endpoint == null) {
-      _log.warning("Unknown control '$prop'");
+    if (device == null) {
+      _log.warning("Can't setControl($prop): device is null!");
       return;
     }
+
+    final endpoint = "florafi-endpoint/${device!.id}/$mqttId/$prop";
 
     late String payload;
     if (value == null) {
@@ -109,8 +114,9 @@ abstract class Component {
 }
 
 abstract class Sensor extends Component {
-  Sensor({required Room room, Map<String, Type>? schema})
-      : super(room: room, schema: {...?schema});
+  Sensor(
+      {required super.room, required super.mqttId, Map<String, Type>? schema})
+      : super(schema: {...?schema});
 
   String get measurementId;
   String get measurementName;

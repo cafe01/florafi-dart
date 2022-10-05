@@ -9,5 +9,6 @@ class AirConditioner extends ThresholdRelay {
   final id = "air_conditioner";
   @override
   final name = "Ar-condicionado";
-  AirConditioner({required Room room}) : super(room: room, schema: {});
+  AirConditioner({required super.room, required super.mqttId})
+      : super(schema: {});
 }

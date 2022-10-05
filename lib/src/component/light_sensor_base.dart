@@ -1,9 +1,9 @@
-import '../room.dart';
 import '../component.dart';
 
 abstract class LightSensorBase extends Sensor {
-  LightSensorBase({required Room room, Map<String, Type>? schema})
-      : super(room: room, schema: schema);
+  LightSensorBase(
+      {required super.room, required super.mqttId, Map<String, Type>? schema})
+      : super(schema: schema);
 
   @override
   bool get isGoodMeasurement {

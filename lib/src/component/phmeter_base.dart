@@ -1,9 +1,9 @@
-import '../room.dart';
 import '../component.dart';
 
 abstract class PhmeterBase extends Sensor {
-  PhmeterBase({required Room room, Map<String, Type>? schema})
-      : super(room: room, schema: schema);
+  PhmeterBase(
+      {required super.room, required super.mqttId, Map<String, Type>? schema})
+      : super(schema: schema);
 
   calibrate() {
     if (device == null || !device!.isOnline) return;

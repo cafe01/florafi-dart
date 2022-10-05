@@ -31,33 +31,45 @@ void main(List<String> arguments) {
   final specFile = File(args["from"]);
   final spec = loadYaml(specFile.readAsStringSync());
 
-  // build
+  // build components
   print("Building components from '${path.relative(specFile.path)}'");
   final YamlMap defaults = spec["defaults"] ?? {};
   final YamlMap components = spec["components"] ?? {};
   final outputDir = Directory(args["to"]);
   outputDir.createSync(recursive: true);
 
-  final List<File> generatedFiles = [];
+  // final List<File> generatedFiles = [];
+  final List<ComponentInfo> generatedComponents = [];
 
   for (final componentId in components.keys) {
-    final file = buildComponent(componentId,
+    final component = buildComponent(componentId,
         defaults: defaults,
         schema: components[componentId],
         outputDir: outputDir);
 
-    generatedFiles.add(file);
+    // generatedFiles.add(file);
+    generatedComponents.add(component);
   }
 
   // generate components file
-  buildComponentsFile(generatedFiles, outputDir.path);
+  buildComponentsFile(generatedComponents, outputDir.path);
+
+  // build room components extension
+  buildRoomExtension(generatedComponents, outputDir.path);
 }
 
-File buildComponent(String componentId,
+ComponentInfo buildComponent(String componentId,
     {required YamlMap defaults,
     required YamlMap schema,
     required Directory outputDir}) {
   print("Building '$componentId'");
+  final component = ComponentInfo(id: componentId);
+
+  // alias
+  component.alias = List<String>.from(schema["alias"] as YamlList? ?? []);
+  final dashedAlias = componentId.replaceAll(RegExp("_"), "-");
+  if (dashedAlias != componentId) component.alias.add(dashedAlias);
+
   // imports
   final srcPath =
       path.join(path.dirname(Platform.script.path), "..", "lib", "src");
@@ -70,8 +82,11 @@ File buildComponent(String componentId,
     imports.add(buildImport(pkg, srcPath, outputDir.path));
   }
 
+  // room accesstor
+  component.roomAccessor = componentId.toCamelCase();
+
   // class
-  final className = componentId.toCamelCase().ucFirst();
+  component.className = component.roomAccessor.ucFirst();
   final baseClass =
       (schema["extends"] as String?) ?? (defaults["extends"] as String?) ?? "";
 
@@ -91,15 +106,15 @@ File buildComponent(String componentId,
   }
 
   // generate source code
-  final isAbstract = schema["abstract"] as bool? ?? false;
-  final classType = isAbstract ? "abstract class" : "class";
+  component.isAbstract = schema["abstract"] as bool? ?? false;
+  final classType = component.isAbstract ? "abstract class" : "class";
 
   String sourceCode = "// This file was auto-generated\n"
       "// Do NOT EDIT by hand\n";
 
   sourceCode += "\n${imports.join('\n')}\n";
   sourceCode += "\n\n";
-  sourceCode += "$classType $className extends $baseClass {\n"
+  sourceCode += "$classType ${component.className} extends $baseClass {\n"
       "\n$constructor\n"
       "\n${roProps.join('\n')}\n"
       "\n${rwProps.join('\n')}\n"
@@ -113,8 +128,9 @@ File buildComponent(String componentId,
   final outputFile = File(path.join(outputDir.path, "$componentId.g.dart"));
   outputFile.writeAsStringSync(sourceCode);
   print(" - saved to '${path.relative(outputFile.path)}'");
+  component.outputFile = outputFile;
 
-  return outputFile;
+  return component;
 }
 
 String buildImport(String pkg, String srcPath, String outputPath) {
@@ -153,9 +169,10 @@ String buildConstructor(String componentId, Map schema) {
   // constructor signature
   if (isAbstract) {
     // accept subclass schema
-    output.add("$className({required Room room, Map<String, Type>? schema})");
+    output.add(
+        "$className({required super.room, required super.mqttId, Map<String, Type>? schema})");
   } else {
-    output.add("$className({required Room room})");
+    output.add("$className({required super.room, required super.mqttId})");
   }
 
   // super
@@ -169,10 +186,9 @@ String buildConstructor(String componentId, Map schema) {
 
   if (isAbstract) {
     // merge subclass schema
-    output.add(
-        ': super(room: room, schema: { ${properties.join(",")}, ...?schema });');
+    output.add(': super(schema: { ${properties.join(",")}, ...?schema });');
   } else {
-    output.add(': super(room: room, schema: { ${properties.join(",")} });');
+    output.add(': super(schema: { ${properties.join(",")} });');
   }
 
   return output.join("\n");
@@ -213,9 +229,11 @@ List<String> buildSetter(YamlMap prop) {
   return result;
 }
 
-void buildComponentsFile(List<File> generatedFiles, String outputPath) {
+void buildComponentsFile(List<ComponentInfo> components, String outputPath) {
   String output = "";
-  for (final file in generatedFiles) {
+  for (final component in components) {
+    final file = component.outputFile;
+    if (file == null) continue;
     final importPath = path.relative(file.path, from: outputPath);
     output += "export '$importPath';\n";
   }
@@ -223,4 +241,130 @@ void buildComponentsFile(List<File> generatedFiles, String outputPath) {
   final componentsFile = File(path.join(outputPath, "components.g.dart"));
   componentsFile.writeAsStringSync(output);
   print("Saved export file '${path.relative(componentsFile.path)}'");
+}
+
+void buildRoomExtension(List<ComponentInfo> componentsInfo, String outputPath) {
+  final components = componentsInfo.where((c) => !c.isAbstract);
+
+  // acessors
+  final acessors =
+      components.map((c) => "${c.className}? ${c.roomAccessor};").join("\n");
+
+  // components getter
+  final listIfs = components.map((c) {
+    return "if (${c.roomAccessor} != null) ${c.roomAccessor}!";
+  });
+
+  String componentGetter =
+      "List<Component> get components => [${listIfs.join(',')}];";
+
+  // hasComponent
+  final hasComponentCases = components.map((c) {
+    final cases = [c.id, ...c.alias].map((id) => "case '$id':");
+    return '''
+    ${cases.join("\n")}
+    return ${c.roomAccessor} != null;
+  ''';
+  });
+
+  final hasComponent = '''
+bool? hasComponent(String componentId) {
+    switch (componentId) {
+      ${hasComponentCases.join("\n")}
+      default:
+        return null;
+    }
+  }
+''';
+
+  // getComponent
+  final getComponentCases = components.map((c) {
+    final cases = [c.id, ...c.alias].map((id) => "case '$id':");
+    return '''
+    ${cases.join("\n")}
+    return ${c.roomAccessor} ??= ${c.className}(room: this as Room, mqttId: componentId);
+  ''';
+  });
+
+  final getComponent = '''
+  Component getComponent(String componentId) {
+    switch (componentId) {
+      ${getComponentCases.join("\n")}
+      default:
+        throw UnknownComponentError(componentId);
+    }
+  }
+''';
+
+  // removeComponent
+  final removeComponentCases = components.map((c) {
+    final cases = [c.id, ...c.alias].map((id) => "case '$id':");
+    return '''
+    ${cases.join("\n")}
+    component = ${c.roomAccessor};
+    ${c.roomAccessor} = null;
+    break;
+  ''';
+  });
+
+  final removeComponent = '''
+  Component? removeComponent(String componentId) {
+    late final Component? component;
+    switch (componentId) {
+      ${removeComponentCases.join("\n")}
+      default:
+        throw UnknownComponentError(componentId);
+    }
+    return component;
+  }
+''';
+
+  // final content
+  String content = '''
+
+import 'components.g.dart';
+import '../component.dart';
+import '../room.dart';
+
+mixin RoomComponents  {
+  $acessors
+
+  // available components
+  $componentGetter
+
+  // hasComponent
+  $hasComponent
+
+  // getComponent
+  $getComponent
+
+  // removeComponent
+  $removeComponent
+
+}
+
+''';
+
+  content = dartFormatter.format(content);
+  final componentsFile = File(path.join(outputPath, "room_components.g.dart"));
+  componentsFile.writeAsStringSync(content);
+  print("Saved export file '${path.relative(componentsFile.path)}'");
+}
+
+class ComponentInfo {
+  ComponentInfo({
+    this.id = "",
+    this.className = "",
+    this.alias = const [],
+    this.roomAccessor = "",
+    this.outputFile,
+    this.isAbstract = false,
+  });
+
+  String id;
+  String className;
+  List<String> alias;
+  String roomAccessor;
+  File? outputFile;
+  bool isAbstract;
 }

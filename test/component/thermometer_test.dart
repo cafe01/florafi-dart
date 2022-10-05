@@ -16,7 +16,7 @@ void main() {
       communicator = TestCommunicator();
       farm.communicator = communicator;
       room = Room('r1', farm: farm);
-      component = Thermometer(room: room);
+      component = Thermometer(room: room, mqttId: "thermometer");
     });
 
     test('has informational properties.', () {

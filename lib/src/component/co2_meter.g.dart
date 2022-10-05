@@ -15,8 +15,8 @@ class Co2Meter extends Sensor {
   final measurementName = "Nível de CO2";
   @override
   final measurementUnit = "ppm";
-  Co2Meter({required Room room})
-      : super(room: room, schema: {
+  Co2Meter({required super.room, required super.mqttId})
+      : super(schema: {
           "measurement": int,
           "good_lower_bound": int,
           "good_upper_bound": int

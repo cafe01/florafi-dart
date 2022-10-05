@@ -9,8 +9,8 @@ class Daytime extends Component {
   final id = "daytime";
   @override
   final name = "Fotoperíodo";
-  Daytime({required Room room})
-      : super(room: room, schema: {
+  Daytime({required super.room, required super.mqttId})
+      : super(schema: {
           "is_daytime": bool,
           "start_hour": int,
           "duration": int,

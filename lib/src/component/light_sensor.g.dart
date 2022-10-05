@@ -17,8 +17,8 @@ class LightSensor extends LightSensorBase {
   final measurementUnit = "%";
   @override
   final measurementProperty = "intensity";
-  LightSensor({required Room room})
-      : super(room: room, schema: {
+  LightSensor({required super.room, required super.mqttId})
+      : super(schema: {
           "intensity": int,
           "min_intensity_day_alert": int,
           "max_intensity_night_alert": int

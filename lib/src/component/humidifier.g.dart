@@ -9,5 +9,5 @@ class Humidifier extends ThresholdRelay {
   final id = "humidifier";
   @override
   final name = "Umidificador";
-  Humidifier({required Room room}) : super(room: room, schema: {});
+  Humidifier({required super.room, required super.mqttId}) : super(schema: {});
 }
