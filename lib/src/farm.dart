@@ -87,13 +87,15 @@ class Farm {
   bool autoDiscoverRoom;
 
   FarmMessage? _lastMessage;
+  int _messageCount = 0;
+
   Clock clock;
   Farm({
     this.name = "",
     this.id = 0,
     this.clock = const Clock(),
     this.communicator,
-    this.autoDiscoverRoom = false,
+    this.autoDiscoverRoom = true,
     this.isReadOnly = false,
   });
 
@@ -131,6 +133,7 @@ class Farm {
       _log.fine(
           "'$name' is ready with ${rooms.values.length} rooms (debounce=$debounce)");
       isReady = true;
+      _log.info("Farm '$name' ready! ($_messageCount messages)");
       _emit(FarmEventType.farmReady);
     }
 
@@ -145,12 +148,12 @@ class Farm {
   void _onConnected() {
     _log.info("Connected. ($name)");
 
-    subscribe("florafi/device/#");
+    subscribe("florafi/device/+");
     for (final device in devices.values) {
       _subscribeHomieTopics(device.id);
     }
     for (final room in rooms.values) {
-      subscribe("florafi/room/${room.id}/#");
+      _subscribeRoom(room.id);
     }
 
     _emit(FarmEventType.farmConnected);
@@ -249,9 +252,16 @@ class Farm {
     room.name = name;
     _emit(FarmEventType.roomInstall, room: room);
     if (communicator != null && isConnected) {
-      subscribe("florafi/room/${room.id}/#");
+      _subscribeRoom(room.id);
     }
     return room;
+  }
+
+  void _subscribeRoom(String roomId) {
+    subscribe("florafi/room/$roomId/\$name");
+    subscribe("florafi/room/$roomId/state/#");
+    subscribe("florafi/room/$roomId/alert/#");
+    subscribe("florafi/room/$roomId/device/#");
   }
 
   void uninstallRoom(String id) {
@@ -266,9 +276,9 @@ class Farm {
     _emit(FarmEventType.roomUninstall, room: room);
 
     // unsubscribe
-    if (communicator != null && isConnected) {
-      // subscribe("florafi/room/${room.id}/#");
-    }
+    // if (communicator != null && isConnected) {
+    //   // subscribe("florafi/room/${room.id}/#");
+    // }
   }
 
   Device _discoverDevice(String id) {
@@ -297,6 +307,7 @@ class Farm {
   }
 
   void processMessage(FarmMessage message) {
+    _messageCount++;
     if (message.topicParts.isEmpty) {
       _log.severe(
           "Invalid farm message: topicParts is empty! (topic: ${message.topic})");
@@ -394,7 +405,7 @@ class Farm {
 
     // discover room
     Room? room;
-    if (roomId != null && roomId.isNotEmpty) {
+    if (autoDiscoverRoom && roomId != null && roomId.isNotEmpty) {
       room = installRoom(roomId);
     }
 
@@ -502,6 +513,7 @@ class Farm {
   }
 
   void _processRoomControlMessage(Room room, FarmMessage msg) {
+    _log.info("Got CONTROL msg on '${msg.topic}'");
     // invalid topic
     if (msg.topicParts.length != 2 || msg.topicParts[1].isEmpty) {
       _log.fine("Invalid control message. (topic: ${msg.topic}");
@@ -574,6 +586,7 @@ class Farm {
     }
 
     final component = room.getComponent(componentId);
+    _log.info("Installing component $componentId (${msg.topic}: ${msg.data})");
     _emit(FarmEventType.roomComponentInstall, room: room);
     if (component.device != device) {
       updateDeviceComponentList(component.device);
