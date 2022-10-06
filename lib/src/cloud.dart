@@ -316,8 +316,11 @@ class FloraCloud {
     throw UnimplementedError();
   }
 
-  Future<http.Response> delete(String path) {
-    throw UnimplementedError();
+  Future<http.Response> delete(String path, {authenticated = true}) {
+    // request
+    final url = _buildUrl(path);
+    final request = http.Request("DELETE", url);
+    return this.request(request, authenticated: authenticated);
   }
 
   // unauthenticated requests
