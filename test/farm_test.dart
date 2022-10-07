@@ -274,41 +274,6 @@ void main() {
     });
   });
 
-  group("_processRoomControlMessage()", () {
-    late Farm farm;
-    late TestCommunicator communicator;
-    // late StreamQueue<FarmEvent> events;
-
-    setUp(() {
-      farm = Farm();
-      farm.communicator = communicator = TestCommunicator();
-      // events = StreamQueue<FarmEvent>(farm.events);
-    });
-
-    test('ignores invalid topic.', () {
-      farm.processMessage(FarmMessage('florafi/room/r1/control', "foo"));
-      farm.processMessage(FarmMessage('florafi/room/r1/control/', "foo"));
-      farm.processMessage(
-          FarmMessage('florafi/room/r1/control/unknown-component', "foo"));
-      farm.processMessage(
-          FarmMessage('florafi/room/r1/control/unknown-component/', "foo"));
-      farm.processMessage(
-          FarmMessage('florafi/room/r1/control/daytime/', "foo"));
-      farm.processMessage(
-          FarmMessage('florafi/room/r1/control/daytime/foo/bar', "foo"));
-      expect(farm.rooms["r1"]!.daytime, null);
-    });
-
-    test('consumes component control.', () {
-      farm.processMessage(
-          FarmMessage('florafi/room/r1/control/daytime/duration', "foobar"));
-      farm.rooms["r1"]!.daytime!.duration = 6;
-      var msg = communicator.sentMessages.removeAt(0);
-      expect(msg.topic, "foobar");
-      expect(msg.message, "6");
-    });
-  });
-
   group("_processRoomDeviceMessage()", () {
     late Farm farm;
     late StreamQueue<FarmEvent> events;
@@ -412,8 +377,8 @@ void main() {
       expect(logLine.room.id, "r1");
       expect(logLine.deviceId, "d1");
       expect(logLine.componentId, "daytime");
-      expect(logLine.time,
-          DateTime.fromMillisecondsSinceEpoch(1645894274 * 1000, isUtc: true));
+      expect(
+          logLine.time, DateTime.fromMillisecondsSinceEpoch(1645894274 * 1000));
     });
 
     test(r'handles "info" log.', () {

@@ -50,7 +50,7 @@ void main() {
     setUp(() {
       final httpClient = MockClient((request) async {
         // get status
-        if (request.method == "GET" && request.url.path == "/status.json") {
+        if (request.method == "GET" && request.url.path == "/status") {
           return Response(
             jsonEncode(statusJson),
             200,
@@ -262,8 +262,7 @@ void main() {
 
     test('sendConfig', () async {
       onPostConfig = (request) async {
-        expect(
-            request.headers["content-type"], "application/json; charset=utf-8");
+        expect(request.headers["content-type"], "application/json");
         expect(request.body, r'{"foo":"bar"}');
       };
 

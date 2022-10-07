@@ -47,20 +47,11 @@ void main() {
     test('can set lowTemperatureLimit.', () {
       component.lowTemperatureLimit = 10;
       expect(communicator.sentMessages.length, 0);
-      component.consumeControl("low_temperature_limit", "control1");
+      component.device = Device(farm: farm, id: 'test_device');
       component.lowTemperatureLimit = 20;
       final msg = communicator.sentMessages[0];
-      expect(msg.topic, "control1");
-      expect(msg.message, "20");
-    });
-
-    test('can set highTemperatureLimit.', () {
-      component.highTemperatureLimit = 10;
-      expect(communicator.sentMessages.length, 0);
-      component.consumeControl("high_temperature_limit", "control2");
-      component.highTemperatureLimit = 20;
-      final msg = communicator.sentMessages[0];
-      expect(msg.topic, "control2");
+      expect(msg.topic,
+          "florafi-endpoint/test_device/${component.mqttId}/low_temperature_limit");
       expect(msg.message, "20");
     });
   });
