@@ -36,7 +36,6 @@ abstract class Component {
 
   final Map<String, Type> _schema = {};
   final Map<String, Object?> _state = {};
-  final Map<String, String> _control = {};
 
   bool get hasDevice => device != null;
   bool get isOnline => device?.isOnline ?? false;
@@ -80,14 +79,6 @@ abstract class Component {
     _state[propertyId] = parsedValue;
 
     return parsedValue;
-  }
-
-  void consumeControl(String name, String endpoint) {
-    if (endpoint.isEmpty) {
-      _control.remove(name);
-    } else {
-      _control[name] = endpoint;
-    }
   }
 
   void setControl(String prop, Object? value) {

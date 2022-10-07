@@ -455,9 +455,6 @@ class Farm {
       case "log":
         _processRoomLogMessage(room, msg);
         break;
-      case "control":
-        _processRoomControlMessage(room, msg);
-        break;
       case "device":
         _processRoomDeviceMessage(room, msg);
         break;
@@ -510,30 +507,6 @@ class Farm {
         component: component,
         propertyId: propertyId,
         propertyValue: propertyValue);
-  }
-
-  void _processRoomControlMessage(Room room, FarmMessage msg) {
-    _log.info("Got CONTROL msg on '${msg.topic}'");
-    // invalid topic
-    if (msg.topicParts.length != 2 || msg.topicParts[1].isEmpty) {
-      _log.fine("Invalid control message. (topic: ${msg.topic}");
-      return;
-    }
-
-    // resolve component
-    final componentId = msg.shiftTopic();
-
-    if (room.hasComponent(componentId) == null) {
-      _log.fine('Invalid control message: '
-          'unknown component "$componentId" (topic: ${msg.topic})');
-      return;
-    }
-
-    final component = room.getComponent(componentId);
-
-    // consume
-    final propertyId = msg.shiftTopic();
-    component.consumeControl(propertyId, msg.data);
   }
 
   void _processRoomDeviceMessage(Room room, FarmMessage msg) {
