@@ -9,7 +9,7 @@ class Ebbflow extends Component {
   final id = "ebbflow";
   @override
   final name = "Irrigação ebbflow";
-  Ebbflow({required super.room, required super.mqttId})
+  Ebbflow({required super.device, required super.mqttId})
       : super(schema: {
           "is_empty": bool,
           "is_full": bool,

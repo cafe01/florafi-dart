@@ -10,20 +10,22 @@ void main() {
     late TestCommunicator communicator;
     late Room room;
     late Thermometer component;
+    late Device device;
 
     setUp(() {
       farm = Farm();
       communicator = TestCommunicator();
       farm.communicator = communicator;
       room = Room('r1', farm: farm);
-      component = Thermometer(room: room, mqttId: "thermometer");
+      device = Device(id: "d1", farm: farm);
+      component = Thermometer(device: device, mqttId: "thermometer");
     });
 
     test('has informational properties.', () {
       // expect(component.isSensor, true);
       expect(component.name, "Termômetro");
       expect(component.measurementName, "Temperatura");
-      expect(component.hasDevice, false);
+      expect(component.hasRoom, false);
     });
 
     test('handles lastValue.', () {
@@ -47,11 +49,11 @@ void main() {
     test('can set lowTemperatureLimit.', () {
       component.lowTemperatureLimit = 10;
       expect(communicator.sentMessages.length, 0);
-      component.device = Device(farm: farm, id: 'test_device');
+      component.device = device;
       component.lowTemperatureLimit = 20;
       final msg = communicator.sentMessages[0];
       expect(msg.topic,
-          "florafi-endpoint/test_device/${component.mqttId}/low_temperature_limit");
+          "florafi-endpoint/${device.id}/${component.mqttId}/low_temperature_limit");
       expect(msg.message, "20");
     });
   });

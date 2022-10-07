@@ -9,6 +9,6 @@ class ReservoirDrain extends Relay {
   final id = "reservoir_drain";
   @override
   final name = "Dreno do reservatório";
-  ReservoirDrain({required super.room, required super.mqttId})
+  ReservoirDrain({required super.device, required super.mqttId})
       : super(schema: {});
 }

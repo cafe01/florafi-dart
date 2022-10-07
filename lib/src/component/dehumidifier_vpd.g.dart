@@ -9,6 +9,6 @@ class DehumidifierVpd extends ThresholdRelay {
   final id = "dehumidifier_vpd";
   @override
   final name = "Desumidificador VPD";
-  DehumidifierVpd({required super.room, required super.mqttId})
+  DehumidifierVpd({required super.device, required super.mqttId})
       : super(schema: {});
 }

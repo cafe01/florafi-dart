@@ -1,11 +1,13 @@
-import 'package:florafi/src/component/room_components.g.dart';
-
+import 'component.dart';
+import 'component/components.g.dart';
 import 'component/extension/datetime.ext.dart';
 import 'alert.dart';
 import 'device.dart';
 import 'events.dart';
 import 'farm.dart';
 import 'log.dart';
+
+part 'component/room_components.g.dart';
 
 // final _log = Logger('Room');
 class UnknownComponentError implements Exception {
@@ -17,7 +19,7 @@ class UnknownComponentError implements Exception {
   }
 }
 
-class Room with RoomComponents {
+class Room {
   Room(this.id, {required this.farm});
 
   Farm farm;
@@ -41,8 +43,42 @@ class Room with RoomComponents {
   Stream<FarmEvent> get events =>
       farm.events.where((event) => event.room == this);
 
+  // components
+  List<Component> get components {
+    List<Component> list = [];
+    for (final device in devices) {
+      list.addAll(device.components);
+    }
+
+    return list;
+  }
+
+  Component? getComponent(String id) {
+    for (final device in devices) {
+      for (final component in device.components) {
+        if (component.mqttId == id || component.id == id) return component;
+      }
+    }
+    return null;
+  }
+
+  T? getComponentByType<T>() {
+    for (final device in devices) {
+      for (final component in device.components) {
+        if (component is T) return component as T;
+      }
+    }
+    return null;
+  }
+
+  bool hasComponent(String id) {
+    return getComponent(id) != null;
+  }
+
   // daytime
   DateTime get currentTime => farm.clock.now().toUtc();
+
+  Daytime? get daytime => getComponent("daytime") as Daytime?;
 
   bool get hasPhotoperiodConfig =>
       daytime?.startHour != null &&

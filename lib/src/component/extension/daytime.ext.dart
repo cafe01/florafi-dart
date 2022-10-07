@@ -14,9 +14,9 @@ extension DayTimeExtension on Daytime {
   DateTime? get dayStart {
     final _startHour = startHour;
     final _isDaytime = isDaytime;
-    if (_startHour == null || _isDaytime == null) return null;
+    final now = device.room?.currentTime;
+    if (_startHour == null || _isDaytime == null || now == null) return null;
 
-    final now = room.currentTime;
     var time = now.startOfDay().add(Duration(hours: _startHour));
 
     if (_isDaytime && time.isAfter(now)) {
@@ -30,13 +30,17 @@ extension DayTimeExtension on Daytime {
     final _dayStart = dayStart;
     final _dayDuration = dayDuration;
     final _isDaytime = isDaytime;
-    if (_dayStart == null || _dayDuration == null || _isDaytime == null) {
+    final now = device.room?.currentTime;
+    if (_dayStart == null ||
+        _dayDuration == null ||
+        _isDaytime == null ||
+        now == null) {
       return null;
     }
 
     var time = _dayStart.startOfHour().add(_dayDuration);
 
-    if (!_isDaytime && time.isAfter(room.currentTime)) {
+    if (!_isDaytime && time.isAfter(now)) {
       time = time.subtract(const Duration(days: 1));
     }
 
@@ -45,12 +49,14 @@ extension DayTimeExtension on Daytime {
 
   Duration? get dayElapsed {
     final start = dayStart;
-    return start == null ? null : room.currentTime.difference(start);
+    final now = device.room?.currentTime;
+    return start == null || now == null ? null : now.difference(start);
   }
 
   Duration? get nightElapsed {
     final start = nightStart;
-    return start == null ? null : room.currentTime.difference(start);
+    final now = device.room?.currentTime;
+    return start == null || now == null ? null : now.difference(start);
   }
 
   Duration? get dayRemaining {

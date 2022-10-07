@@ -15,7 +15,7 @@ class VpdMeter extends Sensor {
   final measurementName = "VPD";
   @override
   final measurementUnit = "pa";
-  VpdMeter({required super.room, required super.mqttId})
+  VpdMeter({required super.device, required super.mqttId})
       : super(schema: {
           "measurement": int,
           "good_lower_bound": int,

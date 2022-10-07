@@ -9,7 +9,7 @@ class Lighting extends Relay {
   final id = "lighting";
   @override
   final name = "Iluminação";
-  Lighting({required super.room, required super.mqttId})
+  Lighting({required super.device, required super.mqttId})
       : super(schema: {"high_temperature_limit": int});
 
   int? get highTemperatureLimit =>

@@ -17,7 +17,7 @@ class Phmeter extends PhmeterBase {
   final measurementUnit = "";
   @override
   final measurementProperty = "current_value";
-  Phmeter({required super.room, required super.mqttId})
+  Phmeter({required super.device, required super.mqttId})
       : super(schema: {
           "current_value": double,
           "last_calibration_time": int,

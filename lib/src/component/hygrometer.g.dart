@@ -17,7 +17,7 @@ class Hygrometer extends Sensor {
   final measurementUnit = "%";
   @override
   final measurementProperty = "last_value";
-  Hygrometer({required super.room, required super.mqttId})
+  Hygrometer({required super.device, required super.mqttId})
       : super(schema: {
           "last_value": double,
           "low_humidity_limit": int,

@@ -9,7 +9,7 @@ class Exaust extends Relay {
   final id = "exaust";
   @override
   final name = "Exaustor";
-  Exaust({required super.room, required super.mqttId})
+  Exaust({required super.device, required super.mqttId})
       : super(schema: {
           "daytime_enabled": bool,
           "nighttime_enabled": bool,

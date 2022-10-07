@@ -106,4 +106,8 @@ class Device {
   void forget() {
     farm.publish("florafi/device/$id", "", retain: true);
   }
+
+  void publishEndpoint(String subtopic, String payload) {
+    farm.publish("florafi-endpoint/$id/$subtopic", payload);
+  }
 }

@@ -6,7 +6,7 @@ import 'relay.g.dart';
 
 abstract class ThresholdRelay extends Relay {
   ThresholdRelay(
-      {required super.room, required super.mqttId, Map<String, Type>? schema})
+      {required super.device, required super.mqttId, Map<String, Type>? schema})
       : super(schema: {
           "deactivation_threshold": int,
           "activation_threshold": int,

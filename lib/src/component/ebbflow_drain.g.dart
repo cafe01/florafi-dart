@@ -9,6 +9,6 @@ class EbbflowDrain extends Relay {
   final id = "ebbflow_drain";
   @override
   final name = "Ebbflow drain";
-  EbbflowDrain({required super.room, required super.mqttId})
+  EbbflowDrain({required super.device, required super.mqttId})
       : super(schema: {});
 }

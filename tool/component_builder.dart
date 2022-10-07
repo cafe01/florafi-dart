@@ -56,6 +56,9 @@ void main(List<String> arguments) {
 
   // build room components extension
   buildRoomExtension(generatedComponents, outputDir.path);
+
+  // build component factory
+  buildComponentFactory(generatedComponents, outputDir.path);
 }
 
 ComponentInfo buildComponent(String componentId,
@@ -170,9 +173,9 @@ String buildConstructor(String componentId, Map schema) {
   if (isAbstract) {
     // accept subclass schema
     output.add(
-        "$className({required super.room, required super.mqttId, Map<String, Type>? schema})");
+        "$className({required super.device, required super.mqttId, Map<String, Type>? schema})");
   } else {
-    output.add("$className({required super.room, required super.mqttId})");
+    output.add("$className({required super.device, required super.mqttId})");
   }
 
   // super
@@ -247,108 +250,147 @@ void buildRoomExtension(List<ComponentInfo> componentsInfo, String outputPath) {
   final components = componentsInfo.where((c) => !c.isAbstract);
 
   // acessors
-  final acessors =
-      components.map((c) => "${c.className}? ${c.roomAccessor};").join("\n");
+  final acessors = components
+      .map((c) =>
+          "${c.className}? get ${c.roomAccessor} => getComponentByType<${c.className}>();")
+      .join("\n");
 
   // components getter
-  final listIfs = components.map((c) {
-    return "if (${c.roomAccessor} != null) ${c.roomAccessor}!";
-  });
+//   final listIfs = components.map((c) {
+//     return "if (${c.roomAccessor} != null) ${c.roomAccessor}!";
+//   });
 
-  String componentGetter =
-      "List<Component> get components => [${listIfs.join(',')}];";
+//   String componentGetter =
+//       "List<Component> get components => [${listIfs.join(',')}];";
 
-  // hasComponent
-  final hasComponentCases = components.map((c) {
-    final cases = [c.id, ...c.alias].map((id) => "case '$id':");
-    return '''
-    ${cases.join("\n")}
-    return ${c.roomAccessor} != null;
-  ''';
-  });
+//   // hasComponent
+//   final hasComponentCases = components.map((c) {
+//     final cases = [c.id, ...c.alias].map((id) => "case '$id':");
+//     return '''
+//     ${cases.join("\n")}
+//     return ${c.roomAccessor} != null;
+//   ''';
+//   });
 
-  final hasComponent = '''
-bool? hasComponent(String componentId) {
-    switch (componentId) {
-      ${hasComponentCases.join("\n")}
-      default:
-        return null;
-    }
-  }
-''';
+//   final hasComponent = '''
+// bool? hasComponent(String componentId) {
+//     switch (componentId) {
+//       ${hasComponentCases.join("\n")}
+//       default:
+//         return null;
+//     }
+//   }
+// ''';
 
-  // getComponent
-  final getComponentCases = components.map((c) {
-    final cases = [c.id, ...c.alias].map((id) => "case '$id':");
-    return '''
-    ${cases.join("\n")}
-    return ${c.roomAccessor} ??= ${c.className}(room: this as Room, mqttId: componentId);
-  ''';
-  });
+//   // getComponent
+//   final getComponentCases = components.map((c) {
+//     final cases = [c.id, ...c.alias].map((id) => "case '$id':");
+//     return '''
+//     ${cases.join("\n")}
+//     return ${c.roomAccessor} ??= ${c.className}(room: this as Room, mqttId: componentId);
+//   ''';
+//   });
 
-  final getComponent = '''
-  Component getComponent(String componentId) {
-    switch (componentId) {
-      ${getComponentCases.join("\n")}
-      default:
-        throw UnknownComponentError(componentId);
-    }
-  }
-''';
+//   final getComponent = '''
+//   Component getComponent(String componentId) {
+//     switch (componentId) {
+//       ${getComponentCases.join("\n")}
+//       default:
+//         throw UnknownComponentError(componentId);
+//     }
+//   }
+// ''';
 
-  // removeComponent
-  final removeComponentCases = components.map((c) {
-    final cases = [c.id, ...c.alias].map((id) => "case '$id':");
-    return '''
-    ${cases.join("\n")}
-    component = ${c.roomAccessor};
-    ${c.roomAccessor} = null;
-    break;
-  ''';
-  });
+//   // removeComponent
+//   final removeComponentCases = components.map((c) {
+//     final cases = [c.id, ...c.alias].map((id) => "case '$id':");
+//     return '''
+//     ${cases.join("\n")}
+//     component = ${c.roomAccessor};
+//     ${c.roomAccessor} = null;
+//     break;
+//   ''';
+//   });
 
-  final removeComponent = '''
-  Component? removeComponent(String componentId) {
-    late final Component? component;
-    switch (componentId) {
-      ${removeComponentCases.join("\n")}
-      default:
-        throw UnknownComponentError(componentId);
-    }
-    return component;
-  }
-''';
+//   final removeComponent = '''
+//   Component? removeComponent(String componentId) {
+//     late final Component? component;
+//     switch (componentId) {
+//       ${removeComponentCases.join("\n")}
+//       default:
+//         throw UnknownComponentError(componentId);
+//     }
+//     return component;
+//   }
+// ''';
 
   // final content
   String content = '''
+part of '../room.dart';
 
-import 'components.g.dart';
-import '../component.dart';
-import '../room.dart';
-
-mixin RoomComponents  {
-  $acessors
-
-  // available components
-  $componentGetter
-
-  // hasComponent
-  $hasComponent
-
-  // getComponent
-  $getComponent
-
-  // removeComponent
-  $removeComponent
-
-}
-
+extension RoomComponents on Room {
+  $acessors}
 ''';
 
   content = dartFormatter.format(content);
-  final componentsFile = File(path.join(outputPath, "room_components.g.dart"));
-  componentsFile.writeAsStringSync(content);
-  print("Saved export file '${path.relative(componentsFile.path)}'");
+  final file = File(path.join(outputPath, "room_components.g.dart"));
+  file.writeAsStringSync(content);
+  print("Generated file '${path.relative(file.path)}'");
+}
+
+void buildComponentFactory(
+    List<ComponentInfo> generatedComponents, String outputPath) {
+  final builderSignature = "Device device, String mqttId";
+  final constructorSignature = "device: device, mqttId: mqttId";
+
+  // builders
+  Map<String, String> builders = {};
+  List<String> builderMapEntries = [];
+  for (final component in generatedComponents) {
+    if (component.isAbstract) continue;
+    final name = "_build${component.className}";
+    final impl =
+        "${component.className} $name($builderSignature) => ${component.className}($constructorSignature);";
+    builders[name] = impl;
+    for (final id in [component.id, ...component.alias]) {
+      builderMapEntries.add('"$id": $name');
+    }
+  }
+
+  // final content
+  String content = '''
+import '../device.dart';
+import '../component.dart';
+import 'components.g.dart';
+
+
+// builders
+${builders.values.join("\n")}
+
+// builder map
+const Map<String, Component Function($builderSignature)> _builders = {
+  ${builderMapEntries.join(",\n")}
+};
+
+class ComponentBuilder {
+
+  static bool isValidId(String id) => _builders.containsKey(id);
+
+  static Component fromId(String id, Device device) {
+    final builder = _builders[id];
+    if (builder == null) {
+      throw Exception("Unknown component '\$id'");
+    }
+
+    return builder(device, id);
+  }
+}
+''';
+
+  content = dartFormatter.format(content);
+  final file = File(path.join(outputPath, "component_builder.g.dart"));
+  file.writeAsStringSync(content);
+  print("Generated file '${path.relative(file.path)}'");
 }
 
 class ComponentInfo {

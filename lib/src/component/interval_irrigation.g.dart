@@ -9,7 +9,7 @@ class IntervalIrrigation extends Relay {
   final id = "interval_irrigation";
   @override
   final name = "Irrigação intermitente";
-  IntervalIrrigation({required super.room, required super.mqttId})
+  IntervalIrrigation({required super.device, required super.mqttId})
       : super(schema: {
           "day_interval": int,
           "night_interval": int,

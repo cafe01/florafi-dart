@@ -17,7 +17,7 @@ class Thermometer extends Sensor {
   final measurementUnit = "ºC";
   @override
   final measurementProperty = "last_value";
-  Thermometer({required super.room, required super.mqttId})
+  Thermometer({required super.device, required super.mqttId})
       : super(schema: {
           "last_value": double,
           "low_temperature_limit": int,

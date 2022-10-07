@@ -31,10 +31,12 @@ extension EbbflowExtension on Ebbflow {
 
   // elapsed
   Duration? _durationSinceTimestamp(int? timestamp) {
+    if (!hasRoom) return null;
+
     if (timestamp == null || timestamp == 0) return null;
     final time =
         DateTime.fromMillisecondsSinceEpoch(1000 * timestamp, isUtc: true);
-    return room.currentTime.difference(time);
+    return device.room!.currentTime.difference(time);
   }
 
   Duration? get lastEmptyElapsed => _durationSinceTimestamp(lastEmpty);
@@ -77,7 +79,8 @@ extension EbbflowExtension on Ebbflow {
   }
 
   Duration? get intervalDuration {
-    final isDaytime = room.isDaytime ?? true;
+    if (!hasRoom) return null;
+    final isDaytime = device.room!.isDaytime ?? true;
     return isDaytime ? dayIntervalDuration : nightIntervalDuration;
   }
 

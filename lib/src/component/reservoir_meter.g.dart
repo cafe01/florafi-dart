@@ -17,7 +17,7 @@ class ReservoirMeter extends Sensor {
   final measurementUnit = "%";
   @override
   final measurementProperty = "level_percent";
-  ReservoirMeter({required super.room, required super.mqttId})
+  ReservoirMeter({required super.device, required super.mqttId})
       : super(schema: {
           "level_percent": int,
           "distance_cm": int,
