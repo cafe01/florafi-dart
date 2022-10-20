@@ -1,7 +1,6 @@
 // This file was auto-generated
 // Do NOT EDIT by hand
 
-import '../room.dart';
 import '../component.dart';
 
 abstract class Relay extends Component {

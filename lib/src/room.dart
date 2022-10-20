@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'component.dart';
 import 'component/components.g.dart';
 import 'component/extension/datetime.ext.dart';
@@ -75,37 +77,91 @@ class Room {
     return getComponent(id) != null;
   }
 
+  // config
+  bool consumeConfigMessage(String property, String value) {
+    switch (property) {
+      case "daytime/start":
+        final seconds = int.tryParse(value);
+        _dayStart = seconds == null ? null : Duration(seconds: seconds);
+        return true;
+      case "daytime/duration":
+        final seconds = int.tryParse(value);
+        _dayDuration = seconds == null ? null : Duration(seconds: seconds);
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  void _setConfig(String property, String? value) {
+    farm.publish("florafi/room/$id/config/$property", value ?? "",
+        retain: true);
+  }
+
+  // daytime config
+  bool get hasPhotoperiodConfig => _dayStart != null && _dayDuration != null;
+
+  Duration? _dayStart;
+  Duration? get dayStart => _dayStart;
+  set dayStart(Duration? offsetFromMidnight) =>
+      _setConfig("daytime/start", offsetFromMidnight?.inSeconds.toString());
+
+  Duration? _dayDuration;
+  Duration? get dayDuration => _dayDuration;
+  set dayDuration(Duration? duration) =>
+      _setConfig("daytime/duration", duration?.inSeconds.toString());
+
+  Duration? get nightDuration => dayDuration == null
+      ? null
+      : Duration(seconds: Duration.secondsPerDay - dayDuration!.inSeconds);
+
   // daytime
-  DateTime get currentTime => farm.clock.now().toUtc();
-
-  Daytime? get daytime => getComponent("daytime") as Daytime?;
-
-  bool get hasPhotoperiodConfig =>
-      daytime?.startHour != null &&
-      daytime?.startDelay != null &&
-      daytime?.duration != null;
+  // DateTime get currentTime => farm.getClock().now().toUtc();
 
   bool? get isDaytime {
     // missing daytime configuration
     if (!hasPhotoperiodConfig) return null;
 
-    final startHour = daytime!.startHour!;
-    final startdelay = daytime!.startDelay!;
-    final durationSeconds = daytime!.duration! * 60;
-
     // calculate
-    final startSecond = Duration.secondsPerHour * startHour + startdelay;
+    final startSecond = _dayStart!.inSeconds;
+    int endSecond = startSecond + _dayDuration!.inSeconds;
 
-    int endSecond = startSecond + durationSeconds;
+    // day overflow
     if (endSecond > Duration.secondsPerDay) {
       endSecond -= Duration.secondsPerDay;
     }
 
-    final now = currentTime;
+    final now = farm.getClock().now().toUtc();
     final currentSecond = now.difference(now.startOfDay()).inSeconds;
 
     return endSecond >= startSecond
         ? currentSecond >= startSecond && currentSecond < endSecond
         : currentSecond >= startSecond || currentSecond < endSecond;
+  }
+
+  StreamController<bool?>? _daytimeChangeController;
+  Stream<bool?>? get onDaytimeChange => _daytimeChangeController?.stream;
+
+  Timer? _daytimeChangeTimer;
+
+  void enableDaytimeMonitor() {
+    if (_daytimeChangeController != null) return;
+
+    _daytimeChangeController = StreamController<bool?>.broadcast();
+    bool? lastIsDaytime = isDaytime;
+    _daytimeChangeTimer = Timer(const Duration(seconds: 1), () {
+      final isDaytime = this.isDaytime;
+      if (isDaytime != lastIsDaytime) {
+        lastIsDaytime = isDaytime;
+        _daytimeChangeController?.add(isDaytime);
+      }
+    });
+  }
+
+  void disableDaytimeMonitor() {
+    _daytimeChangeTimer?.cancel();
+    _daytimeChangeTimer = null;
+    _daytimeChangeController?.close();
+    _daytimeChangeController = null;
   }
 }

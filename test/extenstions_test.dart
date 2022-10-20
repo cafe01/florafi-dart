@@ -1,31 +1,52 @@
+import 'package:clock/clock.dart';
 import 'package:test/test.dart';
 import 'package:florafi/florafi.dart';
 import 'package:florafi/extensions.dart';
 
 void main() {
-  group("Daytime", () {
+  group("Daytime config", () {
     late Farm farm;
+    late Room room;
 
     setUp(() {
-      farm = Farm();
-      farm.processMessage(
-          FarmMessage('florafi/room/r1/state/daytime/duration', '120'));
+      farm = Farm(clock: Clock.fixed(DateTime.utc(2022, 5, 11, 3)));
+      room = farm.rooms["r1"] = Room("r1", farm: farm);
+
+      farm.processMessage(FarmMessage('florafi/room/r1/config/daytime/duration',
+          Duration(hours: 2).inSeconds.toString()));
     });
 
     test('.dayDuration', () {
-      final room = farm.rooms['r1']!;
-      final daytime = room.daytime!;
-
-      expect(daytime.dayDuration, isA<Duration>());
-      expect(daytime.dayDuration?.inHours, 2);
+      expect(room.dayDuration, isA<Duration>());
+      expect(room.dayDuration?.inHours, 2);
     });
 
     test('.nightDuration', () {
-      final room = farm.rooms['r1']!;
-      final daytime = room.daytime!;
+      expect(room.nightDuration, isA<Duration>());
+      expect(room.nightDuration?.inHours, 22);
+    });
+  });
 
-      expect(daytime.nightDuration, isA<Duration>());
-      expect(daytime.nightDuration?.inHours, 22);
+  group("Daytime on Room extension", () {
+    late Farm farm;
+    late Room room;
+
+    setUp(() {
+      farm = Farm(clock: Clock.fixed(DateTime.utc(2022, 5, 11, 3)));
+      room = farm.rooms["r1"] = Room("r1", farm: farm);
+
+      farm.processMessage(FarmMessage('florafi/room/r1/config/daytime/duration',
+          Duration(hours: 2).inSeconds.toString()));
+    });
+
+    test('.dayDuration', () {
+      expect(room.dayDuration, isA<Duration>());
+      expect(room.dayDuration?.inHours, 2);
+    });
+
+    test('.nightDuration', () {
+      expect(room.nightDuration, isA<Duration>());
+      expect(room.nightDuration?.inHours, 22);
     });
   });
 }

@@ -34,7 +34,7 @@ enum FarmEventType {
 }
 
 class FarmEvent {
-  FarmEvent(
+  const FarmEvent(
     this.type, {
     required this.farm,
     this.room,
@@ -48,16 +48,30 @@ class FarmEvent {
     this.fromRetainedMessage = false,
   });
 
-  FarmEventType type;
-  Farm farm;
-  Room? room;
-  Device? device;
-  Alert? alert;
-  Notification? notification;
-  LogLine? log;
+  final FarmEventType type;
+  final Farm farm;
+  final Room? room;
+  final Device? device;
+  final Component? component;
 
-  Component? component;
-  String? propertyId;
-  Object? propertyValue;
-  bool fromRetainedMessage;
+  final Alert? alert;
+  final Notification? notification;
+  final LogLine? log;
+
+  final String? propertyId;
+  final Object? propertyValue;
+  final bool fromRetainedMessage;
+
+  @override
+  String toString() {
+    final details = [
+      farm.name,
+      if (room != null) "room: '${room!.label}'",
+      if (device != null) "device: '${device!.id}'",
+      if (component != null) "component: '${component!.id}'",
+      if (alert != null) "alert: '${alert!.id}'",
+      "retained: $fromRetainedMessage",
+    ];
+    return "${type.name}(${details.join(', ')})";
+  }
 }

@@ -58,6 +58,24 @@ class MqttCommunicator extends Communicator {
   }
 
   @override
+  ConnectionState get connectionState {
+    switch (mqtt.connectionStatus?.state) {
+      case MqttConnectionState.connected:
+        return ConnectionState.connected;
+      case MqttConnectionState.connecting:
+        return ConnectionState.connecting;
+      case MqttConnectionState.disconnected:
+        return ConnectionState.disconnected;
+      case MqttConnectionState.disconnecting:
+        return ConnectionState.disconnecting;
+      case MqttConnectionState.faulted:
+        return ConnectionState.faulted;
+      default:
+        return ConnectionState.unknown;
+    }
+  }
+
+  @override
   bool get isConnected =>
       mqtt.connectionStatus?.state == MqttConnectionState.connected;
   @override
@@ -94,7 +112,8 @@ class MqttCommunicator extends Communicator {
     }
 
     // stream farm messages
-    _mqttMessageSubscription ??=
+    _mqttMessageSubscription?.cancel();
+    _mqttMessageSubscription =
         mqtt.updates!.listen((List<MqttReceivedMessage<MqttMessage?>> packets) {
       for (final received in packets) {
         final msg = received.payload as MqttPublishMessage;

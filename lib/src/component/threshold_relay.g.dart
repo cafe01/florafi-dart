@@ -1,7 +1,6 @@
 // This file was auto-generated
 // Do NOT EDIT by hand
 
-import '../room.dart';
 import 'relay.g.dart';
 
 abstract class ThresholdRelay extends Relay {

@@ -1,4 +1,5 @@
 import 'package:async/async.dart';
+import 'package:florafi/src/component/component_builder.g.dart';
 import 'package:test/test.dart';
 import 'package:florafi/florafi.dart';
 
@@ -52,12 +53,6 @@ void main() {
 
       var event = await events.next;
       expect(event.farm, farm);
-      expect(event.type, equals(FarmEventType.deviceInstall));
-      expect(event.room, null);
-      expect(event.device?.id, "d1");
-
-      event = await events.next;
-      expect(event.farm, farm);
       expect(event.type, equals(FarmEventType.roomInstall));
       expect(event.room?.id, "Q1");
       expect(event.device, null);
@@ -67,27 +62,21 @@ void main() {
       expect(event.room?.id, "Q1");
 
       event = await events.next;
-      expect(event.type, equals(FarmEventType.deviceUpdate));
+      expect(event.farm, farm);
+      expect(event.type, equals(FarmEventType.deviceInstall));
+      expect(event.room, null);
       expect(event.device?.id, "d1");
 
       // 2nd message
-      event = await events.next;
-      expect(event.type, equals(FarmEventType.deviceInstall));
-      expect(event.device?.id, "d2");
-
       event = await events.next;
       expect(event.type, equals(FarmEventType.roomUpdate));
       expect(event.room?.id, "Q1");
 
       event = await events.next;
-      expect(event.type, equals(FarmEventType.deviceUpdate));
+      expect(event.type, equals(FarmEventType.deviceInstall));
       expect(event.device?.id, "d2");
 
       // 3rd message
-      event = await events.next;
-      expect(event.type, equals(FarmEventType.deviceInstall));
-      expect(event.device?.id, "d3");
-
       event = await events.next;
       expect(event.type, equals(FarmEventType.roomInstall));
       expect(event.room?.id, "Q2");
@@ -97,7 +86,7 @@ void main() {
       expect(event.room?.id, "Q2");
 
       event = await events.next;
-      expect(event.type, equals(FarmEventType.deviceUpdate));
+      expect(event.type, equals(FarmEventType.deviceInstall));
       expect(event.device?.id, "d3");
 
       // move d2 to Q2
@@ -144,12 +133,12 @@ void main() {
       farm.processMessage(FarmMessage('florafi/device/d2', ''));
 
       event = await events.next;
-      expect(event.type, equals(FarmEventType.roomUpdate));
-      expect(event.room?.id, "Q1");
-
-      event = await events.next;
       expect(event.type, equals(FarmEventType.deviceUninstall));
       expect(event.device?.id, "d2");
+
+      event = await events.next;
+      expect(event.type, equals(FarmEventType.roomUpdate));
+      expect(event.room?.id, "Q1");
     });
 
     test('found 3 devices', () {
@@ -234,9 +223,16 @@ void main() {
   group("_processRoomStateMessage()", () {
     late Farm farm;
     late StreamQueue<FarmEvent> events;
+    // late Device device;
+    late Room room;
 
     setUp(() {
       farm = Farm();
+      room = farm.rooms["r1"] = Room("r1", farm: farm);
+      final device = farm.devices["d1"] = Device(id: "d1", farm: farm);
+      device.room = room;
+      device.components.add(ComponentBuilder.fromId("ebbflow", device));
+
       events = StreamQueue<FarmEvent>(farm.events);
       events.skip(1); // farmReady
     });
@@ -250,96 +246,26 @@ void main() {
           FarmMessage('florafi/room/r1/state/unknown-component/', "foo"));
       farm.processMessage(FarmMessage('florafi/room/r1/state/daytime/', "foo"));
       farm.processMessage(
-          FarmMessage('florafi/room/r1/state/daytime/foo/bar', "foo"));
-      expect(farm.rooms["r1"]!.daytime, null);
+          FarmMessage('florafi/room/r1/state/ebbflow/foo/bar', "foo"));
+      expect(room.ebbflow!.phase, null);
     });
 
     test('consumes component state.', () {
       farm.processMessage(
-          FarmMessage('florafi/room/r1/state/daytime/duration', "18"));
-      expect(farm.rooms["r1"]!.daytime!.duration, 18);
+          FarmMessage('florafi/room/r1/state/ebbflow/phase', "1"));
+      expect(room.ebbflow!.phase, 1);
     });
 
     test('emits event.', () async {
       farm.processMessage(
-          FarmMessage('florafi/room/r1/state/daytime/duration', "18"));
-      events.skip(1); // skip roomInstall
+          FarmMessage('florafi/room/r1/state/ebbflow/phase', "1"));
       final event = await events.next;
       expect(event.type, FarmEventType.roomState);
       expect(event.farm, farm);
-      expect(event.room, farm.rooms["r1"]);
-      expect(event.component, farm.rooms["r1"]!.daytime);
-      expect(event.propertyId, "duration");
-      expect(event.propertyValue as int, 18);
-    });
-  });
-
-  group("_processRoomDeviceMessage()", () {
-    late Farm farm;
-    late StreamQueue<FarmEvent> events;
-
-    setUp(() {
-      farm = Farm();
-      events = StreamQueue<FarmEvent>(farm.events);
-    });
-
-    test('ignores invalid topic.', () {
-      farm.processMessage(FarmMessage('florafi/room/r1/device', "foo"));
-      farm.processMessage(FarmMessage('florafi/room/r1/device/', "foo"));
-      farm.processMessage(
-          FarmMessage('florafi/room/r1/device/uknown-component', "foo"));
-      expect(farm.devices.length, 0);
-    });
-
-    test('binds device to room component.', () {
-      farm.processMessage(FarmMessage(
-          'florafi/device/d1', '{"room":"r1","deactivated":false}'));
-      farm.processMessage(FarmMessage('florafi/room/r1/device/daytime', "d1"));
-      expect(farm.devices.length, 1);
-      expect(farm.rooms["r1"]?.daytime?.device, farm.devices["d1"]);
-    });
-
-    test('unbinds component from room.', () {
-      farm.processMessage(FarmMessage(
-          'florafi/device/d1', '{"room":"r1","deactivated":false}'));
-      farm.processMessage(FarmMessage('florafi/room/r1/device/daytime', "d1"));
-      expect(farm.rooms["r1"]?.daytime, isA<Daytime>());
-      farm.processMessage(FarmMessage('florafi/room/r1/device/daytime', ""));
-      expect(farm.rooms["r1"]?.daytime, null);
-    });
-
-    test('emits component (un)install events.', () async {
-      farm.processMessage(FarmMessage(
-          'florafi/device/d1', '{"room":"r1","deactivated":false}'));
-      farm.processMessage(FarmMessage('florafi/room/r1/device/daytime', "d1"));
-      expect((await events.next).type, FarmEventType.farmReady);
-      expect((await events.next).type, FarmEventType.deviceInstall);
-      expect((await events.next).type, FarmEventType.roomInstall);
-      expect((await events.next).type, FarmEventType.roomUpdate);
-      expect((await events.next).type, FarmEventType.deviceUpdate);
-
-      // install component
-      FarmEvent event = await events.next;
-      expect(event.farm, farm);
-      expect(event.type, FarmEventType.roomComponentInstall);
-      expect(event.room, farm.rooms["r1"]);
-
-      event = await events.next;
-      expect(event.type, FarmEventType.deviceUpdate);
-      expect(event.device!, farm.devices["d1"]);
-
-      // uninstall component
-      farm.processMessage(FarmMessage('florafi/room/r1/device/daytime', ""));
-      expect(farm.rooms["r1"]?.daytime, null);
-
-      event = await events.next;
-      expect(event.farm, farm);
-      expect(event.type, FarmEventType.roomComponentUninstall);
-      expect(event.room, farm.rooms["r1"]);
-
-      event = await events.next;
-      expect(event.type, FarmEventType.deviceUpdate);
-      expect(event.device!, farm.devices["d1"]);
+      expect(event.room, room);
+      expect(event.component, room.ebbflow);
+      expect(event.propertyId, "phase");
+      expect(event.propertyValue as int, 1);
     });
   });
 

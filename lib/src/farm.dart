@@ -85,6 +85,12 @@ class Farm {
   bool get isDisconnected => communicator?.isDisconnected == true;
   bool get isDisconnecting => communicator?.isDisconnecting == true;
 
+  ConnectionState get connectionState {
+    return communicator == null
+        ? ConnectionState.unknown
+        : communicator!.connectionState;
+  }
+
   bool autoDiscoverRoom;
 
   FarmMessage? _lastMessage;
@@ -92,15 +98,19 @@ class Farm {
 
   int _messageCount = 0;
 
-  Clock clock;
+  Clock? _clock;
+  void setClock(Clock? clock) => _clock = clock;
+  Clock getClock() => _clock ?? clock;
+  DateTime currentTime() => getClock().now();
+
   Farm({
     this.name = "",
     this.id = 0,
-    this.clock = const Clock(),
+    Clock? clock,
     this.communicator,
     this.autoDiscoverRoom = true,
     this.isReadOnly = false,
-  }) {
+  }) : _clock = clock {
     _log = Logger('Farm[$id]');
   }
 
@@ -128,6 +138,7 @@ class Farm {
       propertyValue: propertyValue,
       fromRetainedMessage: _lastMessage?.retained ?? false,
     );
+    // _log.info("event: $event");
     _events.add(event);
   }
 
@@ -265,9 +276,8 @@ class Farm {
 
   void _subscribeRoom(String roomId) {
     subscribe("florafi/room/$roomId/\$name");
-    // subscribe("florafi/room/$roomId/state/#");
+    subscribe("florafi/room/$roomId/config/#");
     subscribe("florafi/room/$roomId/alert/#");
-    // subscribe("florafi/room/$roomId/device/#");
   }
 
   void uninstallRoom(String id) {
@@ -286,23 +296,6 @@ class Farm {
     //   // subscribe("florafi/room/${room.id}/#");
     // }
   }
-
-  // Device _discoverDevice(String id) {
-  //   // return existing
-  //   if (devices.containsKey(id)) {
-  //     return devices[id]!;
-  //   }
-
-  //   // install
-  //   final device = devices[id] = Device(id: id, farm: this);
-
-  //   _emit(FarmEventType.deviceInstall, device: device);
-  //   if (communicator != null) {
-  //     _subscribeHomieTopics(device.id);
-  //   }
-
-  //   return device;
-  // }
 
   void _subscribeHomieTopics(String deviceId) {
     subscribe("homie/$deviceId/+");
@@ -362,21 +355,16 @@ class Farm {
 
     // forget device
     if (message.data.isEmpty) {
-      if (devices.containsKey(deviceId)) {
-        final device = devices[deviceId]!;
-        final room = device.room;
-
+      final device = devices[deviceId];
+      if (device != null) {
+        // forget
         devices.remove(deviceId);
-
-        // unlink from components
-        // unlinkFromComponent(Component c) => c.device = null;
-        // device.components.forEach(unlinkFromComponent);
-
-        // emit room update
-        if (room != null) _emit(FarmEventType.roomUpdate, room: room);
-
-        // emit device uninstall
         _emit(FarmEventType.deviceUninstall, device: device);
+
+        // notify room
+        if (device.room != null) {
+          _emit(FarmEventType.roomUpdate, room: device.room);
+        }
       } else {
         _log.fine("Received 'forget device' message "
             "for unknown device '$deviceId'");
@@ -399,6 +387,9 @@ class Farm {
           "(${message.topic}: ${message.data})");
     }
 
+    _log.info(
+        "Device '$deviceId' advertisement room($roomId) deactivated($deactivated) components(${discoveryMsg["components"]})");
+
     // first device install
     bool isNewDevice = !devices.containsKey(deviceId);
     Device device;
@@ -413,6 +404,27 @@ class Farm {
     // set properties
     device.isDeactivated = deactivated;
 
+    // discover room
+    Room? previousRoom = device.room;
+
+    if (roomId != null && roomId.isNotEmpty) {
+      if (autoDiscoverRoom) device.room = installRoom(roomId);
+    } else {
+      device.room = null;
+    }
+
+    // notify rooms
+    if (previousRoom != device.room) {
+      // emit roomUpdate
+      if (previousRoom != null) {
+        _emit(FarmEventType.roomUpdate, room: previousRoom, device: device);
+      }
+
+      if (device.room != null) {
+        _emit(FarmEventType.roomUpdate, room: device.room, device: device);
+      }
+    }
+
     // parse components advertisement
     final List<String> componentIds = [];
     final componentsAdvertisement = discoveryMsg["components"];
@@ -426,14 +438,27 @@ class Farm {
       componentIds.addAll(List<String>.from(discoveryMsg["components"]));
     }
 
-    _log.info(
-        "Device '$deviceId' room($roomId) advertised components: $componentIds");
-
     // install/uninstall components
     List<Component> components = device.components
         .where((c) => componentIds.contains(c.mqttId))
         .toList();
 
+    // uninstall components
+    final removedComponents = device.components
+        .where((c) => !componentIds.contains(c.mqttId))
+        .toList();
+
+    for (final component in removedComponents) {
+      // remove from device
+      device.components.removeWhere((c) => c == component);
+      // notify room
+      if (device.room != null) {
+        _emit(FarmEventType.roomComponentUninstall,
+            room: device.room, device: device, component: component);
+      }
+    }
+
+    // install components
     for (final mqttId in componentIds) {
       // invalid
       if (!ComponentBuilder.isValidId(mqttId)) {
@@ -445,19 +470,8 @@ class Farm {
           !components.indexWhere((c) => c.mqttId == mqttId).isNegative;
       if (alreadyInstalled) continue;
 
-      // install
-      components.add(ComponentBuilder.fromId(mqttId, device));
-    }
-
-    device.components = components;
-
-    // discover room
-    Room? previousRoom = device.room;
-
-    if (roomId != null && roomId.isNotEmpty) {
-      if (autoDiscoverRoom) device.room = installRoom(roomId);
-    } else {
-      device.room = null;
+      // add component to device
+      device.components.add(ComponentBuilder.fromId(mqttId, device));
     }
 
     // subscribe to room component states
@@ -473,15 +487,6 @@ class Farm {
       _emit(FarmEventType.deviceInstall, device: device);
     } else {
       _emit(FarmEventType.deviceUpdate, device: device);
-    }
-
-    // emit roomUpdate
-    if (previousRoom != null) {
-      _emit(FarmEventType.roomUpdate, room: previousRoom, device: device);
-    }
-
-    if (device.room != null) {
-      _emit(FarmEventType.roomUpdate, room: device.room, device: device);
     }
   }
 
@@ -509,6 +514,9 @@ class Farm {
         break;
       case "log":
         _processRoomLogMessage(room, msg);
+        break;
+      case "config":
+        _processRoomConfigMessage(room, msg);
         break;
       // case "device":
       //   _processRoomDeviceMessage(room, msg);
@@ -680,6 +688,25 @@ class Farm {
     _emit(FarmEventType.roomLog, room: room, log: logLine);
   }
 
+  void _processRoomConfigMessage(Room room, FarmMessage msg) {
+    if (msg.topicParts.isEmpty || msg.topicParts[0].isEmpty) {
+      _log.fine(
+          "Invalid room config message: missing property. (topic: ${msg.topic})");
+      return;
+    }
+
+    final property = msg.topicParts.join("/");
+
+    if (!room.consumeConfigMessage(property, msg.data)) {
+      _log.warning(
+          "unhandled room '${room.label}' config! ('$property' = '${msg.data}')");
+      return;
+    }
+
+    // emit
+    _emit(FarmEventType.roomUpdate, room: room);
+  }
+
   void _processRoomAlertMessage(Room room, FarmMessage msg) {
     // <alertType>/<alertId>
     // invalid: missing type
@@ -835,9 +862,9 @@ class Farm {
         _log.fine("Ignored invalid device '${device.id}' state: ${msg.data}");
     }
 
-    if (device.room != null && previousStatus != device.status) {
-      _emit(FarmEventType.roomUpdate, room: device.room);
-    }
+    // if (device.room != null && previousStatus != device.status) {
+    //   _emit(FarmEventType.roomUpdate, room: device.room);
+    // }
 
     _emit(FarmEventType.deviceStatus, device: device, room: device.room);
   }

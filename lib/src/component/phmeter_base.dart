@@ -1,7 +1,7 @@
 import '../component.dart';
 
-abstract class PhmeterBase extends Sensor {
-  PhmeterBase(
+abstract class PhMeterBase extends Sensor {
+  PhMeterBase(
       {required super.device, required super.mqttId, Map<String, Type>? schema})
       : super(schema: schema);
 

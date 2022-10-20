@@ -11,8 +11,8 @@ VpdMeter _buildVpdMeter(Device device, String mqttId) =>
     VpdMeter(device: device, mqttId: mqttId);
 Co2Meter _buildCo2Meter(Device device, String mqttId) =>
     Co2Meter(device: device, mqttId: mqttId);
-Phmeter _buildPhmeter(Device device, String mqttId) =>
-    Phmeter(device: device, mqttId: mqttId);
+PhMeter _buildPhMeter(Device device, String mqttId) =>
+    PhMeter(device: device, mqttId: mqttId);
 ReservoirMeter _buildReservoirMeter(Device device, String mqttId) =>
     ReservoirMeter(device: device, mqttId: mqttId);
 LightSensor _buildLightSensor(Device device, String mqttId) =>
@@ -59,7 +59,8 @@ const Map<String, Component Function(Device device, String mqttId)> _builders =
   "vpd-meter": _buildVpdMeter,
   "co2_meter": _buildCo2Meter,
   "co2-meter": _buildCo2Meter,
-  "phmeter": _buildPhmeter,
+  "ph_meter": _buildPhMeter,
+  "ph-meter": _buildPhMeter,
   "reservoir_meter": _buildReservoirMeter,
   "netuno": _buildReservoirMeter,
   "reservoir": _buildReservoirMeter,

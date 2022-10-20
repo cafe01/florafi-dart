@@ -36,7 +36,8 @@ extension EbbflowExtension on Ebbflow {
     if (timestamp == null || timestamp == 0) return null;
     final time =
         DateTime.fromMillisecondsSinceEpoch(1000 * timestamp, isUtc: true);
-    return device.room!.currentTime.difference(time);
+    final currentTime = device.farm.getClock().now().toUtc();
+    return currentTime.difference(time);
   }
 
   Duration? get lastEmptyElapsed => _durationSinceTimestamp(lastEmpty);

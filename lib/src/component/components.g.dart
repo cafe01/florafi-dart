@@ -2,7 +2,7 @@ export 'thermometer.g.dart';
 export 'hygrometer.g.dart';
 export 'vpd_meter.g.dart';
 export 'co2_meter.g.dart';
-export 'phmeter.g.dart';
+export 'ph_meter.g.dart';
 export 'reservoir_meter.g.dart';
 export 'light_sensor.g.dart';
 export 'daytime.g.dart';

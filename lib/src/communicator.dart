@@ -5,6 +5,20 @@ import 'farm.dart' show FarmMessage;
 
 enum CommunicatorQos { atMostOnce, atLeastOnce, exactlyOnce }
 
+enum ConnectionState {
+  disconnecting,
+
+  disconnected,
+
+  connecting,
+
+  connected,
+
+  faulted,
+
+  unknown,
+}
+
 typedef Callback = void Function();
 
 class ConnectError implements Exception {
@@ -53,6 +67,8 @@ abstract class Communicator {
   bool get isConnecting => false;
   bool get isDisconnected => false;
   bool get isDisconnecting => false;
+
+  ConnectionState get connectionState;
 
   int publish(String topic, String data,
       {CommunicatorQos qos = CommunicatorQos.atLeastOnce, bool retain = false});

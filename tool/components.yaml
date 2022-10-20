@@ -1,8 +1,6 @@
 
 defaults:
   extends: Component
-  import:
-    - room.dart
 components:
   thermometer:
     alias:
@@ -102,10 +100,10 @@ components:
         setter_type: num
         override: true
 
-  phmeter:
+  ph_meter:
     import:
       - component/phmeter_base.dart
-    extends: PhmeterBase
+    extends: PhMeterBase
     init_vars:
       name: Medidor de pH
       measurementId: ph

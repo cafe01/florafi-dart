@@ -1,12 +1,11 @@
 // This file was auto-generated
 // Do NOT EDIT by hand
 
-import '../room.dart';
 import 'phmeter_base.dart';
 
-class Phmeter extends PhmeterBase {
+class PhMeter extends PhMeterBase {
   @override
-  final id = "phmeter";
+  final id = "ph_meter";
   @override
   final name = "Medidor de pH";
   @override
@@ -17,7 +16,7 @@ class Phmeter extends PhmeterBase {
   final measurementUnit = "";
   @override
   final measurementProperty = "current_value";
-  Phmeter({required super.device, required super.mqttId})
+  PhMeter({required super.device, required super.mqttId})
       : super(schema: {
           "current_value": double,
           "last_calibration_time": int,

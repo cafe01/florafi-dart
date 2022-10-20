@@ -5,7 +5,7 @@ extension RoomComponents on Room {
   Hygrometer? get hygrometer => getComponentByType<Hygrometer>();
   VpdMeter? get vpdMeter => getComponentByType<VpdMeter>();
   Co2Meter? get co2Meter => getComponentByType<Co2Meter>();
-  Phmeter? get phmeter => getComponentByType<Phmeter>();
+  PhMeter? get phMeter => getComponentByType<PhMeter>();
   ReservoirMeter? get reservoirMeter => getComponentByType<ReservoirMeter>();
   LightSensor? get lightSensor => getComponentByType<LightSensor>();
   Daytime? get daytime => getComponentByType<Daytime>();

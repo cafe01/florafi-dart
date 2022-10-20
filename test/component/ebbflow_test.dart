@@ -1,20 +1,29 @@
 // import 'package:logging/logging.dart';
 import 'package:clock/clock.dart';
+import 'package:florafi/src/component/component_builder.g.dart';
 import 'package:test/test.dart';
 import 'package:florafi/florafi.dart';
 import 'package:florafi/extensions.dart';
 
 void main() {
-  group("Ebbflow.isConfigured", () {
-    late Farm farm;
-    late Room room;
-    late Ebbflow ebbflow;
+  late Farm farm;
+  late Room room;
+  late Ebbflow ebbflow;
+  late Device device;
 
+  setUp(() {
+    farm = Farm();
+    room = Room("r1", farm: farm);
+    device = Device(farm: farm, id: 'd1');
+    device.room = room;
+    ebbflow = ComponentBuilder.fromId('ebbflow', device) as Ebbflow;
+    device.components.add(ebbflow);
+    farm.devices[device.id] = device;
+  });
+
+  group("Ebbflow.isConfigured", () {
     setUp(() {
-      farm = Farm();
-      farm.processMessage(FarmMessage(r'florafi/room/r1/$name', 'r1'));
-      room = farm.rooms["r1"]!;
-      ebbflow = room.getComponent("ebbflow") as Ebbflow;
+      farm.setClock(null);
     });
 
     test('is false if missing dayInterval or nightInterval', () {
@@ -27,15 +36,8 @@ void main() {
   });
 
   group("Ebbflow.lastEmptyTime", () {
-    late Farm farm;
-    late Room room;
-    late Ebbflow ebbflow;
-
     setUp(() {
-      farm = Farm();
-      farm.processMessage(FarmMessage(r'florafi/room/r1/$name', 'r1'));
-      room = farm.rooms["r1"]!;
-      ebbflow = room.getComponent("ebbflow") as Ebbflow;
+      farm.setClock(null);
     });
 
     test('returns null or DateTime', () {
@@ -50,16 +52,8 @@ void main() {
   });
 
   group("Ebbflow.lastEmptyElapsed", () {
-    late Farm farm;
-    late Room room;
-    late Ebbflow ebbflow;
-    // final now = DateTime.now().toUtc();
-
     setUp(() {
-      farm = Farm(clock: Clock.fixed(DateTime.utc(2022, 5, 11)));
-      farm.processMessage(FarmMessage(r'florafi/room/r1/$name', 'r1'));
-      room = farm.rooms["r1"]!;
-      ebbflow = room.getComponent("ebbflow") as Ebbflow;
+      farm.setClock(Clock.fixed(DateTime.utc(2022, 5, 11)));
     });
 
     test('returns null when timestamp is null or zero', () {
@@ -69,7 +63,8 @@ void main() {
     });
 
     test('returns Duration to now', () {
-      final unixTime = farm.clock.hoursAgo(1).millisecondsSinceEpoch ~/ 1000;
+      final unixTime =
+          farm.getClock().hoursAgo(1).millisecondsSinceEpoch ~/ 1000;
       ebbflow.consumeState("last_empty", "$unixTime");
       expect(ebbflow.lastEmptyElapsed, isA<Duration>());
       expect(ebbflow.lastEmptyElapsed, Duration(hours: 1));
@@ -77,16 +72,8 @@ void main() {
   });
 
   group("Ebbflow.currentPhaseElapsed", () {
-    late Farm farm;
-    late Room room;
-    late Ebbflow ebbflow;
-    // final now = DateTime.now().toUtc();
-
     setUp(() {
-      farm = Farm(clock: Clock.fixed(DateTime.utc(2022, 5, 11)));
-      farm.processMessage(FarmMessage(r'florafi/room/r1/$name', 'r1'));
-      room = farm.rooms["r1"]!;
-      ebbflow = room.getComponent("ebbflow") as Ebbflow;
+      farm.setClock(Clock.fixed(DateTime.utc(2022, 5, 11)));
     });
 
     test('returns null when phase is null or zero', () {
@@ -98,7 +85,7 @@ void main() {
     test('returns emptyDuration', () {
       final phase = 1;
       final unixTime =
-          farm.clock.hoursAgo(phase).millisecondsSinceEpoch ~/ 1000;
+          farm.getClock().hoursAgo(phase).millisecondsSinceEpoch ~/ 1000;
       ebbflow.consumeState("phase", "$phase");
       ebbflow.consumeState("last_empty", "$unixTime");
       expect(ebbflow.currentPhaseElapsed, Duration(hours: phase));
@@ -107,7 +94,7 @@ void main() {
     test('returns drainDuration', () {
       final phase = 2;
       final unixTime =
-          farm.clock.hoursAgo(phase).millisecondsSinceEpoch ~/ 1000;
+          farm.getClock().hoursAgo(phase).millisecondsSinceEpoch ~/ 1000;
       ebbflow.consumeState("phase", "$phase");
       ebbflow.consumeState("last_drain", "$unixTime");
       expect(ebbflow.currentPhaseElapsed, Duration(hours: phase));
@@ -116,7 +103,7 @@ void main() {
     test('returns floodDuration', () {
       final phase = 3;
       final unixTime =
-          farm.clock.hoursAgo(phase).millisecondsSinceEpoch ~/ 1000;
+          farm.getClock().hoursAgo(phase).millisecondsSinceEpoch ~/ 1000;
       ebbflow.consumeState("phase", "$phase");
       ebbflow.consumeState("last_flood", "$unixTime");
       expect(ebbflow.currentPhaseElapsed, Duration(hours: phase));
@@ -125,7 +112,7 @@ void main() {
     test('returns fullDuration', () {
       final phase = 4;
       final unixTime =
-          farm.clock.hoursAgo(phase).millisecondsSinceEpoch ~/ 1000;
+          farm.getClock().hoursAgo(phase).millisecondsSinceEpoch ~/ 1000;
       ebbflow.consumeState("phase", "$phase");
       ebbflow.consumeState("last_full", "$unixTime");
       expect(ebbflow.currentPhaseElapsed, Duration(hours: phase));

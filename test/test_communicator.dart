@@ -14,6 +14,15 @@ class TestCommunicator extends Communicator {
   int subscriptionId = 0;
   Map<String, CommunicatorQos> subscriptions = {};
 
+  bool _isConnected = false;
+
+  @override
+  ConnectionState get connectionState {
+    return _isConnected
+        ? ConnectionState.connected
+        : ConnectionState.disconnected;
+  }
+
   @override
   int publish(String topic, String message,
       {CommunicatorQos qos = CommunicatorQos.atLeastOnce,
@@ -24,6 +33,7 @@ class TestCommunicator extends Communicator {
 
   @override
   Future<void> connect() async {
+    _isConnected = true;
     if (onConnected != null) {
       onConnected!();
     }
@@ -37,6 +47,7 @@ class TestCommunicator extends Communicator {
 
   @override
   void disconnect() {
+    _isConnected = false;
     if (onDisconnected != null) {
       onDisconnected!();
     }

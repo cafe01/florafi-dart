@@ -1,7 +1,6 @@
 // This file was auto-generated
 // Do NOT EDIT by hand
 
-import '../room.dart';
 import 'relay.g.dart';
 
 class ReservoirFill extends Relay {
