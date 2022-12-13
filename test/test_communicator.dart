@@ -17,10 +17,10 @@ class TestCommunicator extends Communicator {
   bool _isConnected = false;
 
   @override
-  ConnectionState get connectionState {
+  FarmConnectionState get connectionState {
     return _isConnected
-        ? ConnectionState.connected
-        : ConnectionState.disconnected;
+        ? FarmConnectionState.connected
+        : FarmConnectionState.disconnected;
   }
 
   @override

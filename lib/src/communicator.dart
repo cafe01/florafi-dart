@@ -5,7 +5,7 @@ import 'farm.dart' show FarmMessage;
 
 enum CommunicatorQos { atMostOnce, atLeastOnce, exactlyOnce }
 
-enum ConnectionState {
+enum FarmConnectionState {
   disconnecting,
 
   disconnected,
@@ -17,6 +17,11 @@ enum ConnectionState {
   faulted,
 
   unknown,
+}
+
+extension FarmConnectionStateX on FarmConnectionState {
+  bool get isConnecting => this == FarmConnectionState.connecting;
+  bool get isDisconnected => this == FarmConnectionState.disconnected;
 }
 
 typedef Callback = void Function();
@@ -68,7 +73,7 @@ abstract class Communicator {
   bool get isDisconnected => false;
   bool get isDisconnecting => false;
 
-  ConnectionState get connectionState;
+  FarmConnectionState get connectionState;
 
   int publish(String topic, String data,
       {CommunicatorQos qos = CommunicatorQos.atLeastOnce, bool retain = false});

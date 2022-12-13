@@ -58,20 +58,20 @@ class MqttCommunicator extends Communicator {
   }
 
   @override
-  ConnectionState get connectionState {
+  FarmConnectionState get connectionState {
     switch (mqtt.connectionStatus?.state) {
       case MqttConnectionState.connected:
-        return ConnectionState.connected;
+        return FarmConnectionState.connected;
       case MqttConnectionState.connecting:
-        return ConnectionState.connecting;
+        return FarmConnectionState.connecting;
       case MqttConnectionState.disconnected:
-        return ConnectionState.disconnected;
+        return FarmConnectionState.disconnected;
       case MqttConnectionState.disconnecting:
-        return ConnectionState.disconnecting;
+        return FarmConnectionState.disconnecting;
       case MqttConnectionState.faulted:
-        return ConnectionState.faulted;
+        return FarmConnectionState.faulted;
       default:
-        return ConnectionState.unknown;
+        return FarmConnectionState.unknown;
     }
   }
 
