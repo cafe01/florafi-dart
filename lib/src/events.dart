@@ -25,6 +25,7 @@ enum FarmEventType {
   roomComponentUninstall,
   roomUninstall,
 
+  farmConnecting,
   farmConnected,
   farmReady,
   farmDisconnected,

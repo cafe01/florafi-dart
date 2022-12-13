@@ -221,6 +221,7 @@ class Farm {
     // }
 
     try {
+      _emit(FarmEventType.farmConnecting);
       await communicator!.connect();
     } on ConnectError {
       _emit(FarmEventType.farmConnectError);
