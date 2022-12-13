@@ -6,6 +6,15 @@ import 'log.dart';
 import 'notification.dart';
 import 'component.dart';
 
+const kFarmConnectionEventTypes = [
+  FarmEventType.farmConnecting,
+  FarmEventType.farmConnected,
+  FarmEventType.farmConnectError,
+  FarmEventType.farmReconnect,
+  FarmEventType.farmReconnected,
+  FarmEventType.farmDisconnected,
+];
+
 enum FarmEventType {
   deviceInstall,
   deviceUpdate,
@@ -75,4 +84,6 @@ class FarmEvent {
     ];
     return "${type.name}(${details.join(', ')})";
   }
+
+  bool get isConnectionEvent => kFarmConnectionEventTypes.contains(type);
 }
