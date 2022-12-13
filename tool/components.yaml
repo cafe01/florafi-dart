@@ -429,6 +429,13 @@ components:
     init_vars:
       name: Ar-condicionado
 
+  heater:
+    import:
+      - component/threshold_relay.g.dart
+    extends: ThresholdRelay
+    init_vars:
+      name: Aquecedor
+
   co2_emitter:
     import:
       - component/threshold_relay.g.dart

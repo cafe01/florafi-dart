@@ -85,9 +85,9 @@ class Farm {
   bool get isDisconnected => communicator?.isDisconnected == true;
   bool get isDisconnecting => communicator?.isDisconnecting == true;
 
-  ConnectionState get connectionState {
+  FarmConnectionState get connectionState {
     return communicator == null
-        ? ConnectionState.unknown
+        ? FarmConnectionState.unknown
         : communicator!.connectionState;
   }
 
@@ -576,65 +576,6 @@ class Farm {
         propertyId: propertyId,
         propertyValue: propertyValue);
   }
-
-  // void _processRoomDeviceMessage(Room room, FarmMessage msg) {
-  //   // invalid topic
-  //   if (msg.topicParts.length != 1 || msg.topicParts[0].isEmpty) {
-  //     _log.fine("Invalid device message. (topic: ${msg.topic}");
-  //     return;
-  //   }
-
-  //   // validate component
-  //   final componentId = msg.shiftTopic();
-  //   final roomHasComponent = room.hasComponent(componentId);
-
-  //   if (roomHasComponent == null) {
-  //     _log.fine('Invalid device message: '
-  //         'unknown component "$componentId" (topic: ${msg.topic})');
-  //     return;
-  //   }
-
-  //   updateDeviceComponentList(Device? device) {
-  //     if (device == null) return;
-  //     device.components =
-  //         room.components.where((e) => e.device == device).toList();
-  //     _emit(FarmEventType.deviceUpdate, device: device);
-  //   }
-
-  //   // Device? device;
-
-  //   // uninstall component
-  //   if (msg.data.isEmpty) {
-  //     // component gone already
-  //     if (!roomHasComponent) return;
-
-  //     // remove component from room
-  //     final component = room.removeComponent(componentId)!;
-  //     _emit(FarmEventType.roomComponentUninstall, room: room);
-  //     updateDeviceComponentList(component.device);
-  //     component.device = null;
-  //     return;
-  //   }
-
-  //   // install component
-  //   final device = devices[msg.data];
-
-  //   // garbage reference from unknown (forgotten) device
-  //   if (device == null) {
-  //     _log.info("Cleaning garbage device ref at '${msg.topic}'");
-  //     publish(msg.topic, "", retain: true);
-  //     return;
-  //   }
-
-  //   final component = room.getComponent(componentId);
-  //   _log.info("Installing component $componentId (${msg.topic}: ${msg.data})");
-  //   _emit(FarmEventType.roomComponentInstall, room: room);
-  //   if (component.device != device) {
-  //     updateDeviceComponentList(component.device);
-  //     component.device = device;
-  //     updateDeviceComponentList(device);
-  //   }
-  // }
 
   void _processRoomLogMessage(Room room, FarmMessage msg) {
     if (msg.topicParts.isEmpty || msg.topicParts[0].isEmpty) {
