@@ -47,7 +47,9 @@ class Device {
   Farm farm;
   String id;
   String name = "";
+
   Room? room;
+  bool get hasRoom => room != null;
 
   bool isDeactivated = false;
   int uptime = -1;
