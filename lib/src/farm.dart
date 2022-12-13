@@ -396,13 +396,15 @@ class Farm {
 
     if (isNewDevice) {
       device = devices[deviceId] = Device(id: deviceId, farm: this);
-      if (communicator != null) _subscribeHomieTopics(device.id);
     } else {
       device = devices[deviceId]!;
     }
 
     // set properties
     device.isDeactivated = deactivated;
+
+    // subscribe homie topics
+    if (communicator != null) _subscribeHomieTopics(device.id);
 
     // discover room
     Room? previousRoom = device.room;
@@ -438,11 +440,6 @@ class Farm {
       componentIds.addAll(List<String>.from(discoveryMsg["components"]));
     }
 
-    // install/uninstall components
-    List<Component> components = device.components
-        .where((c) => componentIds.contains(c.mqttId))
-        .toList();
-
     // uninstall components
     final removedComponents = device.components
         .where((c) => !componentIds.contains(c.mqttId))
@@ -467,7 +464,7 @@ class Farm {
       }
       // already installed
       final alreadyInstalled =
-          !components.indexWhere((c) => c.mqttId == mqttId).isNegative;
+          !device.components.indexWhere((c) => c.mqttId == mqttId).isNegative;
       if (alreadyInstalled) continue;
 
       // add component to device
