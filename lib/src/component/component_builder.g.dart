@@ -45,6 +45,8 @@ DehumidifierVpd _buildDehumidifierVpd(Device device, String mqttId) =>
     DehumidifierVpd(device: device, mqttId: mqttId);
 AirConditioner _buildAirConditioner(Device device, String mqttId) =>
     AirConditioner(device: device, mqttId: mqttId);
+Heater _buildHeater(Device device, String mqttId) =>
+    Heater(device: device, mqttId: mqttId);
 Co2Emitter _buildCo2Emitter(Device device, String mqttId) =>
     Co2Emitter(device: device, mqttId: mqttId);
 
@@ -99,6 +101,7 @@ const Map<String, Component Function(Device device, String mqttId)> _builders =
   "air_conditioner": _buildAirConditioner,
   "air-conditioner-relay": _buildAirConditioner,
   "air-conditioner": _buildAirConditioner,
+  "heater": _buildHeater,
   "co2_emitter": _buildCo2Emitter,
   "co2-emitter": _buildCo2Emitter
 };

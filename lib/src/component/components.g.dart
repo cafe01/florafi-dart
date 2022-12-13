@@ -21,4 +21,5 @@ export 'dehumidifier.g.dart';
 export 'humidifier_vpd.g.dart';
 export 'dehumidifier_vpd.g.dart';
 export 'air_conditioner.g.dart';
+export 'heater.g.dart';
 export 'co2_emitter.g.dart';

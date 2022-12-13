@@ -23,5 +23,6 @@ extension RoomComponents on Room {
   HumidifierVpd? get humidifierVpd => getComponentByType<HumidifierVpd>();
   DehumidifierVpd? get dehumidifierVpd => getComponentByType<DehumidifierVpd>();
   AirConditioner? get airConditioner => getComponentByType<AirConditioner>();
+  Heater? get heater => getComponentByType<Heater>();
   Co2Emitter? get co2Emitter => getComponentByType<Co2Emitter>();
 }
