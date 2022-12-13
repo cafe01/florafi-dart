@@ -82,8 +82,28 @@ abstract class Component {
   }
 
   void setControl(String prop, Object? value) {
-    final endpoint = "florafi-endpoint/${device.id}/$mqttId/$prop";
+    // prop type
+    final propType = _schema[prop];
+    if (propType == null) {
+      _log.warning("can't setControl(): '$id' doesn't have prop '$prop'");
+      return;
+    }
 
+    // cast double to int
+    if (value is double && propType == int) {
+      _log.info(
+          "setControl(): '$id.$prop': casting from double($value) to int(${value.round()})");
+      value = value.round();
+    }
+
+    // wrong type
+    if (value != null && value.runtimeType != propType) {
+      _log.warning(
+          "can't setControl(): '$id.$prop' is a $propType, not '${value.runtimeType}'");
+      return;
+    }
+
+    // prepare payload
     late String payload;
     if (value == null) {
       payload = "";
@@ -95,6 +115,8 @@ abstract class Component {
       payload = value.toString();
     }
 
+    // publish
+    final endpoint = "florafi-endpoint/${device.id}/$mqttId/$prop";
     device.farm.publish(endpoint, payload);
   }
 }
