@@ -66,6 +66,16 @@ class Device {
 
   List<Component> components = [];
 
+  Component? getComponentById(String id) {
+    for (final component in components) {
+      if (component.id == id || component.mqttId == id) {
+        return component;
+      }
+    }
+
+    return null;
+  }
+
   Stream<FarmEvent> get events =>
       farm.events.where((event) => event.device == this);
 

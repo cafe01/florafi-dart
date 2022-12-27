@@ -37,7 +37,7 @@ class Room {
   LogLine? lastLog;
 
   List<Alert> get alerts =>
-      farm.alerts.values.where((a) => a.roomId == id).toList();
+      farm.alerts.values.where((a) => a.room == this).toList();
 
   List<Device> get devices =>
       farm.devices.values.where((d) => d.room == this).toList();

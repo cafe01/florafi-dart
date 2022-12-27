@@ -44,6 +44,9 @@ class FarmMessage {
 class Farm {
   late final Logger _log;
 
+  bool autoDiscoverRoom;
+  bool keepInactiveAlerts;
+
   Map<String, Device> devices = {};
   Map<String, Room> rooms = {};
   Map<String, Alert> alerts = {};
@@ -91,8 +94,6 @@ class Farm {
         : communicator!.connectionState;
   }
 
-  bool autoDiscoverRoom;
-
   FarmMessage? _lastMessage;
   FarmMessage? get lastMessage => _lastMessage;
 
@@ -110,6 +111,7 @@ class Farm {
     this.communicator,
     this.autoDiscoverRoom = true,
     this.isReadOnly = false,
+    this.keepInactiveAlerts = false,
   }) : _clock = clock {
     _log = Logger('Farm[$id]');
   }
@@ -168,6 +170,7 @@ class Farm {
     for (final device in devices.values) {
       _subscribeHomieTopics(device.id);
     }
+
     for (final room in rooms.values) {
       _subscribeRoom(room.id);
     }
@@ -259,6 +262,15 @@ class Farm {
     return communicator!.subscribe(topic, qos);
   }
 
+  void unsubscribe(String topic) {
+    if (communicator == null) {
+      _log.warning("Can't unsubscribe before connect()");
+      return;
+    }
+    _log.info("unsubscribing from '$topic'");
+    communicator!.unsubscribe(topic);
+  }
+
   Room installRoom(String id, {String? name}) {
     // return existing
     if (rooms.containsKey(id)) {
@@ -339,25 +351,79 @@ class Farm {
     if (subtopic == "room") {
       _processRoomMessage(message);
     } else if (subtopic == "device") {
-      _processFlorafiDeviceMessage(message);
+      _processDeviceMessage(message);
     } else {
       _log.fine("Unknown florafi message type '${message.topic}'");
     }
   }
 
-  void _processFlorafiDeviceMessage(FarmMessage message) {
-    if (message.topicParts.length != 1 || message.topicParts[0].isEmpty) {
-      _log.fine("Malformed device discovery message: "
+  void _processDeviceMessage(FarmMessage message) {
+    // malformed topic
+    if (message.topicParts.isEmpty || message.topicParts[0].isEmpty) {
+      _log.fine("Malformed device message: "
           "missing device id subtopic. (${message.topic}) (${message.topicParts.length})");
       return;
     }
 
     final deviceId = message.shiftTopic();
 
+    // process device announcement
+    if (message.topicParts.isEmpty) {
+      return _processDeviceAnnouncementMessage(deviceId, message);
+    }
+
+    // dispatch subtopic
+    final subtopic = message.shiftTopic();
+    switch (subtopic) {
+      case "component":
+        return _processDeviceComponentMessage(deviceId, message);
+      default:
+        _log.warning(
+            "Uknown device message subtopic '$subtopic' (${message.topic})");
+    }
+  }
+
+  void _processDeviceAnnouncementMessage(String deviceId, FarmMessage message) {
+    // final deviceId = message.shiftTopic();
+
+    // helper functions
+    uninstallComponent(Device device, Component component) {
+      // remove from device
+      device.components.removeWhere((c) => c == component);
+
+      // notify room
+      if (device.room != null) {
+        _emit(FarmEventType.roomComponentUninstall,
+            room: device.room, device: device, component: component);
+      }
+
+      // unsubscribe component topics
+      unsubscribe(
+          "florafi/room/${device.room!.id}/state/${component.mqttId}/#");
+      unsubscribe(
+          "florafi/device/${device.id}/component/${component.mqttId}/#");
+    }
+
+    installComponent(Device device, Component component) {
+      // add to device
+      device.components.add(component);
+
+      // notify room
+      if (device.room != null) {
+        _emit(FarmEventType.roomComponentInstall,
+            room: device.room, device: device, component: component);
+      }
+    }
+
     // forget device
     if (message.data.isEmpty) {
       final device = devices[deviceId];
       if (device != null) {
+        // uninstall components
+        for (final component in device.components) {
+          uninstallComponent(device, component);
+        }
+
         // forget
         devices.remove(deviceId);
         _emit(FarmEventType.deviceUninstall, device: device);
@@ -447,20 +513,15 @@ class Farm {
         .toList();
 
     for (final component in removedComponents) {
-      // remove from device
-      device.components.removeWhere((c) => c == component);
-      // notify room
-      if (device.room != null) {
-        _emit(FarmEventType.roomComponentUninstall,
-            room: device.room, device: device, component: component);
-      }
+      uninstallComponent(device, component);
     }
 
     // install components
     for (final mqttId in componentIds) {
       // invalid
       if (!ComponentBuilder.isValidId(mqttId)) {
-        _log.severe("Device '$deviceId' advertised unknown '$mqttId'.");
+        _log.severe(
+            "Device '$deviceId' advertised unknown component '$mqttId'.");
         continue;
       }
       // already installed
@@ -468,15 +529,17 @@ class Farm {
           !device.components.indexWhere((c) => c.mqttId == mqttId).isNegative;
       if (alreadyInstalled) continue;
 
-      // add component to device
-      device.components.add(ComponentBuilder.fromId(mqttId, device));
+      // install
+      installComponent(device, ComponentBuilder.fromId(mqttId, device));
     }
 
-    // subscribe to room component states
+    // subscribe to room component topics
     if (device.room != null) {
       for (final component in device.components) {
         subscribe(
             "florafi/room/${device.room!.id}/state/${component.mqttId}/#");
+        subscribe(
+            "florafi/device/${device.id}/component/${component.mqttId}/#");
       }
     }
 
@@ -486,6 +549,116 @@ class Farm {
     } else {
       _emit(FarmEventType.deviceUpdate, device: device);
     }
+  }
+
+  void _processDeviceComponentMessage(String deviceId, FarmMessage message) {
+    // malformed topic
+    if (message.topicParts.isEmpty || message.topicParts[0].isEmpty) {
+      _log.fine("Malformed component message: "
+          "missing component id subtopic. (${message.topic})");
+      return;
+    }
+
+    // get existing device
+    final device = devices[deviceId];
+
+    if (device == null) {
+      _log.warning(
+          "Got component message for unknown device '$deviceId' (${message.topic})");
+      return;
+    }
+
+    // get component
+    final componentId = message.shiftTopic();
+    Component component;
+    try {
+      component = device.components.firstWhere((c) => c.mqttId == componentId);
+    } on StateError {
+      _log.warning(
+          "Invalid component message: device '$deviceId' has no component '$componentId' (${message.topic})");
+      return;
+    }
+
+    // process component announcement
+    if (message.topicParts.isEmpty) {
+      _log.warning(
+          "Ignoring component announcement message. (${message.topic})");
+      return;
+    }
+
+    // dispatch subtopic
+    final subtopic = message.shiftTopic();
+    switch (subtopic) {
+      case "alert":
+        return _processComponentAlertMessage(component, message);
+      default:
+        _log.warning(
+            "Uknown component message subtopic '$subtopic' (${message.topic})");
+    }
+  }
+
+  void _processComponentAlertMessage(Component component, FarmMessage message) {
+    // malformed topic
+    if (message.topicParts.isEmpty || message.topicParts[0].isEmpty) {
+      _log.fine("Malformed component alert message: "
+          "missing alert id subtopic. (${message.topic})");
+      return;
+    }
+
+    // alert id
+    final alertId = message.shiftTopic();
+
+    // alert key
+    final alertKey = "${component.device.id}.${component.id}.$alertId";
+
+    // ignore message if device has no room
+    final room = component.device.room;
+    if (room == null) {
+      return _log.warning("Ignoring component alert message: "
+          "device has no room}' (${message.topic})");
+    }
+
+    // TODO handle null message
+
+    // parse json payload
+    final json = jsonDecode(message.data);
+
+    // resolve type
+    final type = Alert.resolveType(json["type"] ?? "");
+    if (type == null) {
+      return _log.warning("Malformed component alert message: "
+          "invalid type '${json["type"] ?? ""}' (${message.topic})");
+    }
+
+    // timestamp
+    final timestamp = json["timestamp"] as int?;
+    if (timestamp == null) {
+      return _log.warning("Malformed component alert message: "
+          "missing timestamp (${message.topic} ${message.data})");
+    }
+
+    // process alert
+    Alert alert = Alert(
+      id: alertId,
+      type: type,
+      timestamp: timestamp,
+      room: room,
+      component: component,
+    );
+
+    // same alert, ignore
+    if (alerts[alertKey] == alert) return;
+
+    // store alert
+    if (!alert.isActive && !keepInactiveAlerts) {
+      alerts.remove(alertKey);
+    } else {
+      alerts[alertKey] = alert;
+    }
+
+    // emit
+    _emit(FarmEventType.roomAlert,
+        room: room, alert: alert, component: component);
   }
 
   void _processRoomMessage(FarmMessage msg) {
@@ -516,12 +689,7 @@ class Farm {
       case "config":
         _processRoomConfigMessage(room, msg);
         break;
-      // case "device":
-      //   _processRoomDeviceMessage(room, msg);
-      //   break;
-      case "alert":
-        _processRoomAlertMessage(room, msg);
-        break;
+
       case "notification":
         _processRoomNotificationMessage(room, msg);
         break;
@@ -644,60 +812,6 @@ class Farm {
 
     // emit
     _emit(FarmEventType.roomUpdate, room: room);
-  }
-
-  void _processRoomAlertMessage(Room room, FarmMessage msg) {
-    // <alertType>/<alertId>
-    // invalid: missing type
-    if (msg.topicParts.isEmpty || msg.topicParts[0].isEmpty) {
-      return _log
-          .fine("Invalid alert message: missing type. (topic: ${msg.topic})");
-    }
-
-    late AlertType alertType;
-    switch (msg.shiftTopic()) {
-      case "info":
-        alertType = AlertType.info;
-        break;
-      case "warning":
-        alertType = AlertType.warning;
-        break;
-      case "error":
-        alertType = AlertType.error;
-        break;
-      default:
-        return _log
-            .fine("Invalid alert message: invalid type. (topic: ${msg.topic})");
-    }
-
-    // invalid: missing id
-    if (msg.topicParts.isEmpty || msg.topicParts[0].isEmpty) {
-      return _log
-          .warning("Invalid alert message: missing id. (topic: ${msg.topic})");
-    }
-
-    final alertId = msg.shiftTopic();
-    final timestamp = int.tryParse(msg.data) ?? 0;
-
-    // process alert
-    final alertKey = "${room.id}.$alertId";
-    Alert? alert;
-
-    if (alerts.containsKey(alertKey)) {
-      // changed
-      if (alerts[alertKey]!.timestamp != timestamp) {
-        alert = alerts[alertKey]!;
-        alert.timestamp = timestamp;
-      }
-    } else if (timestamp > 0) {
-      alert = alerts[alertKey] = Alert(
-          id: alertId, type: alertType, timestamp: timestamp, roomId: room.id);
-    }
-
-    if (alert != null) {
-      if (!alert.isActive) alerts.remove(alertKey);
-      _emit(FarmEventType.roomAlert, room: room, alert: alert);
-    }
   }
 
   void _processRoomNotificationMessage(Room room, FarmMessage msg) {

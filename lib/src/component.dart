@@ -1,8 +1,10 @@
-import 'package:florafi/florafi.dart';
+// import 'package:florafi/florafi.dart';
 import 'package:logging/logging.dart';
 
+import 'alert.dart';
 import 'device.dart';
 import 'events.dart';
+import 'room.dart';
 
 final _log = Logger("Component");
 
@@ -29,11 +31,14 @@ abstract class Component {
   String get name;
   String mqttId;
 
+  final Map<String, Type> _schema = {};
+  final Map<String, Object?> _state = {};
+
   Stream<FarmEvent> get events =>
       device.farm.events.where((event) => event.component == this);
 
-  final Map<String, Type> _schema = {};
-  final Map<String, Object?> _state = {};
+  Iterable<Alert> get alerts =>
+      device.farm.alerts.values.where((alert) => alert.component == this);
 
   bool get isOnline => device.isOnline;
 

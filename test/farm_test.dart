@@ -27,17 +27,19 @@ void main() {
     });
   });
 
-  group("_processFlorafiDeviceMessage", () {
+  group("_processDeviceAnnouncementMessage", () {
     late Farm farm;
     late StreamQueue<FarmEvent> events;
 
     setUp(() {
       farm = Farm();
       events = StreamQueue<FarmEvent>(farm.events);
+      farm.communicator = TestCommunicator();
       // events.skip(1); // skip farmReady
 
       final List<FarmMessage> messages = [
-        FarmMessage('florafi/device/d1', '{"room":"Q1","deactivated":false}'),
+        FarmMessage('florafi/device/d1',
+            '{"room":"Q1","deactivated":false, "components":["light"]}'),
         FarmMessage('florafi/device/d2', '{"room":"Q1","deactivated":true}'),
         FarmMessage('florafi/device/d3', '{"room":"Q2","deactivated":false}'),
       ];
@@ -60,6 +62,12 @@ void main() {
       event = await events.next;
       expect(event.type, equals(FarmEventType.roomUpdate));
       expect(event.room?.id, "Q1");
+
+      event = await events.next;
+      expect(event.farm, farm);
+      expect(event.type, equals(FarmEventType.roomComponentInstall));
+      expect(event.room?.id, "Q1");
+      expect(event.component?.mqttId, "light");
 
       event = await events.next;
       expect(event.farm, farm);
@@ -217,6 +225,14 @@ void main() {
 
       expect(farm.devices.length, equals(4));
       expect(farm.rooms.length, equals(2));
+    });
+
+    test('subscribe to component topics', () {
+      final subscriptions =
+          (farm.communicator as TestCommunicator).subscriptions;
+      expect(subscriptions.containsKey("florafi/room/Q1/state/light/#"), true);
+      expect(subscriptions.containsKey("florafi/device/d1/component/light/#"),
+          true);
     });
   });
 
@@ -383,7 +399,7 @@ void main() {
       expect(farm.alerts.containsKey('r1.info-alert'), true);
       expect(farm.alerts.length, 1);
       final alert = farm.alerts["r1.info-alert"];
-      expect(alert?.roomId, 'r1');
+      expect(alert?.room.id, 'r1');
       expect(alert?.id, 'info-alert');
       expect(alert?.type, AlertType.info);
       expect(alert?.timestamp, 123);
