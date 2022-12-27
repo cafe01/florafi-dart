@@ -164,6 +164,11 @@ class MqttCommunicator extends Communicator {
   }
 
   @override
+  void unsubscribe(String topic) {
+    mqtt.unsubscribe(topic);
+  }
+
+  @override
   Future<void> disconnect() async {
     await _mqttMessageSubscription?.cancel();
     _mqttMessageSubscription = null;

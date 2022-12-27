@@ -82,4 +82,5 @@ abstract class Communicator {
       {CommunicatorQos qos = CommunicatorQos.atLeastOnce, bool retain = false});
 
   int? subscribe(String topic, CommunicatorQos qos);
+  void unsubscribe(String topic);
 }

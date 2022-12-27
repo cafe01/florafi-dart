@@ -46,6 +46,11 @@ class TestCommunicator extends Communicator {
   }
 
   @override
+  void unsubscribe(String topic) {
+    subscriptions.remove(topic);
+  }
+
+  @override
   void disconnect() {
     _isConnected = false;
     if (onDisconnected != null) {
