@@ -1,5 +1,9 @@
+## 0.10.1
+  - fixed Florafi.readFarms() not calling onFarm callback
+
 ## 0.6.0
 - added ReservoirMeter, ReservoirFill, ReservoirDrain
+
 ## 0.5.0
 - new components: Co2Meter and Co2Emitter
 - LogLine.time now defaults to local time

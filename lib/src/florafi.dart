@@ -103,6 +103,7 @@ class Florafi {
       if (!farms.containsKey(farmId)) {
         farms[farmId] = Farm(name: "Farm $farmId", id: farmId);
         _events.add(farms[farmId]!.events);
+        if (onFarm != null) onFarm(farms[farmId]!);
       }
 
       // process message
